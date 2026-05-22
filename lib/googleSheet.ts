@@ -23,7 +23,7 @@ function getSheetsClient() {
   const auth = new google.auth.JWT({
     email: clientEmail,
     key: sanitizedKey,
-    scopes: ['https://www.googleapis.com/auth/spreadsheets.readonly'],
+    scopes: ['https://www.googleapis.com/auth/spreadsheets'],
   });
 
   return {
@@ -33,6 +33,29 @@ function getSheetsClient() {
       auth,
     }),
   };
+}
+
+export async function updateDashboardFilters(year: string, month: string) {
+  const client = getSheetsClient();
+  if (!client) return null;
+
+  try {
+    // แปลง month เป็นข้อความที่ชีทต้องการถ้าเป็น 'all'
+    const monthValue = month === 'all' ? 'รวมทุกเดือน' : month;
+
+    await client.sheets.spreadsheets.values.update({
+      spreadsheetId: client.sheetId,
+      range: "'Dashboard W10 All info'!C2:C3",
+      valueInputOption: 'USER_ENTERED',
+      requestBody: {
+        values: [[year], [monthValue]],
+      },
+    });
+    return true;
+  } catch (error: any) {
+    console.error('Google Sheets Update error:', error.message);
+    return false;
+  }
 }
 
 export async function getDashboardData() {

@@ -1,8 +1,27 @@
 import { NextResponse } from 'next/server';
-import { getDashboardData } from '@/lib/googleSheet';
+import { getDashboardData, updateDashboardFilters } from '@/lib/googleSheet';
 
 export async function GET(request: Request) {
   try {
+    const { searchParams } = new URL(request.url);
+    const selectedYear = searchParams.get('year');
+    const selectedMonth = searchParams.get('month');
+
+    // แก้ไข: จะอัปเดตชีทเฉพาะเมื่อมีการ "กดเลือกใหม่" จากหน้าเว็บเท่านั้น (ส่งพารามิเตอร์มา)
+    // ถ้าเปิดหน้าจอปกติหรือ Refresh (ไม่มีพารามิเตอร์) จะให้อ่านตามที่ชีทเป็นอยู่
+    if (selectedYear || selectedMonth) {
+      const dataForInit = await getDashboardData();
+      const yearToUpdate = selectedYear || dataForInit?.info[1]?.[2]?.toString() || '2026';
+      const monthToUpdate = selectedMonth || dataForInit?.info[2]?.[2]?.toString() || 'all';
+      
+      const success = await updateDashboardFilters(yearToUpdate, monthToUpdate);
+      if (!success) {
+        throw new Error('ไม่สามารถอัปเดตตัวกรองใน Google Sheet');
+      }
+      
+      // เพิ่มเวลารอให้ชีทคำนวณสูตรทั้งหมดให้เสร็จ (4 วินาที)
+      await new Promise(resolve => setTimeout(resolve, 4000));
+    }
 
     const data = await getDashboardData();
 
@@ -19,17 +38,13 @@ export async function GET(request: Request) {
     // ใช้สำหรับกราฟ/summary
     const getNum = (r: number, c: number) => {
       const val = infoData[r]?.[c];
-
-      return parseFloat(
-        val?.toString().replace(/[^0-9.-]/g, '')
-      ) || 0;
+      return parseFloat(val?.toString().replace(/[^0-9.-]/g, '')) || 0;
     };
 
-    const currentYear =
-      infoData[0]?.[2]?.toString() || '2026';
-
-    const currentMonth =
-      infoData[1]?.[2]?.toString() || '5';
+    // ใช้ค่าที่ User เลือกเป็นหลักในการส่งกลับ UI เพื่อป้องกัน Dropdown ดีดกลับ
+    const currentYear = selectedYear || infoData[1]?.[2]?.toString() || '2026';
+    const currentMonthRaw = infoData[2]?.[2]?.toString() || 'all';
+    const currentMonth = selectedMonth || (currentMonthRaw === 'รวมทุกเดือน' ? 'all' : currentMonthRaw);
 
     // gauge
     const gauges = {
