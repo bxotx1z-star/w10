@@ -13,7 +13,7 @@ export async function GET(request: Request) {
     });
   } 
   
-  const rawData = data.dashboard;
+  const rawData = data.info;
   if (rawData.length < 5) {
     return NextResponse.json({
       error: 'ข้อมูลไม่พอ'
