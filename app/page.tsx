@@ -320,15 +320,22 @@ export default function DashboardPage() {
           </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
         {[
             { id: 'W11', color: 'yellow' }, { id: 'W12', color: 'green' }, { id: 'W13', color: 'pink' }, { id: 'W14', color: 'blue' }
         ].map((w) => (
-          <div key={w.id} className="grid grid-cols-2 gap-3 md:gap-4 p-4 md:p-5 bg-slate-50/50 rounded-[1.5rem] md:rounded-[2rem] border-b-4 border-slate-200 shadow-sm hover:shadow-md transition-all">
-            <ModernGauge value={wGauges[w.id]?.empNorm} label="พนง ปกติ" themeColor={w.color} />
-            <ModernGauge value={wGauges[w.id]?.conNorm} label="ลจ ปกติ" themeColor={w.color} />
-            <ModernGauge value={wGauges[w.id]?.empOT} label="พนง +OT" themeColor={w.color} />
-            <ModernGauge value={wGauges[w.id]?.conOT} label="ลจ +OT" themeColor={w.color} />
+          <div key={w.id} className="flex flex-col gap-3">
+            <div className="flex items-center gap-2 px-2">
+              <div className={`w-1.5 h-6 rounded-full bg-slate-300`}></div>
+              <h4 className="text-xl font-black text-slate-700 tracking-wider uppercase">{w.id}</h4>
+            </div>
+            <div className="grid grid-cols-2 gap-3 md:gap-4 p-4 md:p-5 bg-slate-50/50 rounded-[1.5rem] md:rounded-[2rem] border-b-4 border-slate-200 shadow-sm hover:shadow-md transition-all relative overflow-hidden">
+              <div className="absolute top-2 left-3 text-[8px] font-black text-slate-200 uppercase tracking-widest hidden md:block">{w.id}</div>
+              <ModernGauge value={wGauges[w.id]?.empNorm} label="พนง ปกติ" themeColor={w.color} />
+              <ModernGauge value={wGauges[w.id]?.conNorm} label="ลจ ปกติ" themeColor={w.color} />
+              <ModernGauge value={wGauges[w.id]?.empOT} label="พนง +OT" themeColor={w.color} />
+              <ModernGauge value={wGauges[w.id]?.conOT} label="ลจ +OT" themeColor={w.color} />
+            </div>
           </div>
         ))}
       </div>
