@@ -17,7 +17,7 @@ const chartColors = ['#FFD100', '#F37021', '#4A4A49', '#16a34a', '#7c3aed', '#db
 import ReactSpeedometer from 'react-d3-speedometer';
 
 const ModernGauge = ({ value, label }: { value?: number; label: string }) => {
-  const safeValue = Number.isFinite(value) ? value : 0;
+  const safeValue: number = typeof value === 'number' ? value : 0;
   const clampedValue = Math.min(Math.max(safeValue, -3), 3);
   
   return (

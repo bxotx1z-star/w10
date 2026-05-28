@@ -63,7 +63,7 @@ const WOBlock = ({ statusData }: any) => {
 import ReactSpeedometer from 'react-d3-speedometer';
 
 const ModernGauge = ({ value, label }: any) => {
-  const safeValue = Number.isFinite(value) ? value : 0;
+  const safeValue: number = typeof value === 'number' ? value : 0;
   const clampedValue = Math.min(Math.max(safeValue, -3), 3);
   
   return (
