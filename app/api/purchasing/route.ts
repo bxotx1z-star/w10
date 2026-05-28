@@ -50,9 +50,9 @@ export async function GET(request: Request) {
     // Row 1: W11 (index 0 is Row 1?) No, infoData[0] is Row 1.
     // Row 2: index 1
     const gauges = {
-      empNorm: getNum(1, 81),
-      empOT: getNum(2, 81),
-      w11_1: getNum(3, 81)
+      empNorm: getNum(3, 81),
+      empOT: getNum(4, 81),
+      w11_1: getNum(15, 74)
     };
 
     // =========================

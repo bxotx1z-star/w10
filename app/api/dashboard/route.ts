@@ -66,10 +66,10 @@ export async function GET(request: Request) {
   };
 
   const wGauges: any = {
-    W11: { empNorm: getNum(0, 81), conNorm: getNum(0, 82), empOT: getNum(1, 81), conOT: getNum(1, 82) },
-    W12: { empNorm: getNum(4, 81), conNorm: getNum(4, 82), empOT: getNum(5, 81), conOT: getNum(5, 82) },
-    W13: { empNorm: getNum(6, 81), conNorm: getNum(6, 82), empOT: getNum(7, 81), conOT: getNum(7, 82) },
-    W14: { empNorm: getNum(8, 81), conNorm: getNum(8, 82), empOT: getNum(9, 81), conOT: getNum(9, 82) },
+    W11: { empNorm: getNum(1, 81), conNorm: getNum(1, 82), empOT: getNum(2, 81), conOT: getNum(2, 82) },
+    W12: { empNorm: getNum(5, 81), conNorm: getNum(5, 82), empOT: getNum(6, 81), conOT: getNum(6, 82) },
+    W13: { empNorm: getNum(7, 81), conNorm: getNum(7, 82), empOT: getNum(8, 81), conOT: getNum(8, 82) },
+    W14: { empNorm: getNum(9, 81), conNorm: getNum(9, 82), empOT: getNum(10, 81), conOT: getNum(10, 82) },
   };
 
   const w_all = {

@@ -60,36 +60,37 @@ const WOBlock = ({ statusData }: any) => {
   );
 };
 
-const ModernGauge = ({ value, label, themeColor }: any) => {
-  const v = Math.min(Math.max(value || 0, -5), 5);
-  const colorMap: any = { yellow: '#FFEE57', green: '#57FF6B', pink: '#FF57E9', blue: '#57A0FF' };
-  const color = colorMap[themeColor] || '#3b82f6';
-  
-  const chartData = v < 0 
-    ? [
-        { name: 'bg-left', value: 5 + v, color: '#e2e8f0' },
-        { name: 'active-left', value: Math.abs(v), color: color },
-        { name: 'bg-right', value: 5, color: '#e2e8f0' }
-      ]
-    : [
-        { name: 'bg-left', value: 5, color: '#e2e8f0' },
-        { name: 'active-right', value: v, color: color },
-        { name: 'bg-right', value: 5 - v, color: '#e2e8f0' }
-      ];
+import ReactSpeedometer from 'react-d3-speedometer';
 
+const ModernGauge = ({ value, label }: any) => {
+  const safeValue = Number.isFinite(value) ? value : 0;
+  const clampedValue = Math.min(Math.max(safeValue, -3), 3);
+  
   return (
-    <div className="flex flex-col items-center p-4 bg-slate-50 rounded-2xl border border-slate-200 shadow-sm w-full relative overflow-hidden group hover:border-[#FFD100] transition-all">
-       <div className="text-[11px] font-black text-slate-500 uppercase mb-2 tracking-widest z-10">{label}</div>
-       <div className="h-28 w-40 z-10">
-          <ResponsiveContainer width="100%" height="100%">
-             <PieChart>
-                <Pie data={chartData} cx="50%" cy="100%" startAngle={180} endAngle={0} innerRadius={35} outerRadius={50} paddingAngle={0} dataKey="value" stroke="none">
-                   {chartData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color} />)}
-                </Pie>
-             </PieChart>
-          </ResponsiveContainer>
+    <div className="flex flex-col items-center bg-white p-3 rounded-2xl border border-slate-200 shadow-sm w-full relative">
+       <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">{label}</div>
+       <div className="h-28 w-44">
+          <ReactSpeedometer
+            value={Number(clampedValue.toFixed(2))}
+            minValue={-3}
+            maxValue={3}
+            segments={3}
+            customSegmentStops={[-3, -1, 1, 3]}
+            segmentColors={['#FCD34D', '#4ADE80', '#F87171']}
+            needleColor="#1e293b"
+            needleHeightRatio={0.6}
+            startColor="#FCD34D"
+            endColor="#F87171"
+            needleTransitionDuration={500}
+            needleTransition="easeQuadInOut"
+            ringWidth={20}
+            maxSegmentLabels={0}
+            hideCurrentValue={false}
+            currentValueText={`${safeValue.toFixed(2)}`}
+            width={176}
+            height={112}
+          />
        </div>
-       <div className="text-[20px] font-black text-slate-800 -mt-6 z-10">{value ?? 0}</div>
     </div>
   );
 };

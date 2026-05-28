@@ -4,7 +4,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { ArrowLeft, CalendarDays, ClipboardList, Filter, RefreshCw, Search, ShoppingCart, ShoppingBag, Package, Truck, CreditCard } from 'lucide-react';
 import Highcharts from 'highcharts';
 import HighchartsReact from 'highcharts-react-official';
-import { Cell, Pie, PieChart } from 'recharts';
+import { Cell, Pie, PieChart, ResponsiveContainer } from 'recharts';
 
 type GaugeData = { empNorm?: number; empOT?: number; w11_1?: number; };
 type NameValue = { name: string; value: number; };
@@ -14,22 +14,37 @@ type PurchasingData = { gauges?: GaugeData; chartData?: NameValue[]; summaryTabl
 
 const chartColors = ['#FFD100', '#F37021', '#4A4A49', '#16a34a', '#7c3aed', '#db2777', '#0891b2', '#ea580c'];
 
-const ModernGauge = ({ value, label }: { value?: number; label: string }) => {
-  const safeValue = Number.isFinite(value) ? value || 0 : 0;
-  const clamped = Math.min(Math.max(safeValue, -5), 5);
-  const data = [{ name: 'value', value: clamped + 5 }, { name: 'remaining', value: 10 - (clamped + 5) }];
+import ReactSpeedometer from 'react-d3-speedometer';
 
+const ModernGauge = ({ value, label }: { value?: number; label: string }) => {
+  const safeValue = Number.isFinite(value) ? value : 0;
+  const clampedValue = Math.min(Math.max(safeValue, -3), 3);
+  
   return (
-    <div className="flex h-full flex-col items-center justify-between rounded-2xl border border-slate-100 bg-white/80 backdrop-blur-sm p-4 shadow-sm hover:shadow-md transition-all group">
-      <div className="whitespace-nowrap text-center text-[11px] font-black uppercase tracking-wide text-slate-500 group-hover:text-[#4A4A49] transition-colors">{label}</div>
-      <div className="h-24 w-28">
-        <PieChart width={112} height={96}>
-          <Pie data={data} cx="50%" cy="100%" startAngle={180} endAngle={0} innerRadius={24} outerRadius={36} dataKey="value" stroke="none">
-            <Cell fill="#FFD100" /><Cell fill="#f1f5f9" />
-          </Pie>
-        </PieChart>
+    <div className="flex h-full flex-col items-center bg-white p-3 rounded-2xl border border-slate-200 shadow-sm w-full relative">
+      <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">{label}</div>
+      <div className="h-28 w-44">
+        <ReactSpeedometer
+          value={Number(clampedValue.toFixed(2))}
+          minValue={-3}
+          maxValue={3}
+          segments={3}
+          customSegmentStops={[-3, -1, 1, 3]}
+          segmentColors={['#FCD34D', '#4ADE80', '#F87171']}
+          needleColor="#1e293b"
+          needleHeightRatio={0.6}
+          startColor="#FCD34D"
+          endColor="#F87171"
+          needleTransitionDuration={500}
+          needleTransition="easeQuadInOut"
+          ringWidth={20}
+          maxSegmentLabels={0}
+          hideCurrentValue={false}
+          currentValueText={`${safeValue.toFixed(2)}`}
+          width={176}
+          height={112}
+        />
       </div>
-      <div className="-mt-5 text-[15px] font-black text-slate-900 group-hover:scale-110 transition-transform">{safeValue}</div>
     </div>
   );
 };

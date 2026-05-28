@@ -54,11 +54,11 @@ async function main() {
     });
     
     const values = res.data.values || [];
-    console.log("Reading first 20 rows of Dashboard W10 All info (Cols 75-85):");
+    console.log("Reading first 20 rows of Dashboard W10 All info (Cols 20-40):");
     values.forEach((row, i) => {
       // Print indices to help mapping
       if (row.length > 0) {
-        console.log(`Row ${i}:`, row.map((v, colIdx) => `[${colIdx}] ${v}`).slice(75, 85)); 
+        console.log(`Row ${i}:`, row.map((v, colIdx) => `[${colIdx}] ${v}`).slice(20, 40)); 
       }
     });
   } catch (err) {
