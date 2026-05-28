@@ -82,7 +82,7 @@ const ModernGauge = ({ value, label }: any) => {
             startColor="#FCD34D"
             endColor="#F87171"
             needleTransitionDuration={500}
-            needleTransition="easeQuadInOut"
+            needleTransition="easeLinear"
             ringWidth={20}
             maxSegmentLabels={0}
             hideCurrentValue={false}
