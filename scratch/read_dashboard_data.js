@@ -47,18 +47,18 @@ async function main() {
     });
     console.log("Sheet names:", spreadsheet.data.sheets.map(s => s.properties.title));
 
-    // Read from the actual data sheet 'Dashboard W10 All'
+    // Read from 'Dashboard W10 All info'
     const res = await sheets.spreadsheets.values.get({
       spreadsheetId: sheetId,
-      range: "'Dashboard W10 All'!A30:CZ100",
+      range: "'Dashboard W10 All info'!A1:CZ20",
     });
     
     const values = res.data.values || [];
-    console.log("Reading rows 30-100 of Dashboard W10 All:");
+    console.log("Reading first 20 rows of Dashboard W10 All info (Cols 75-85):");
     values.forEach((row, i) => {
       // Print indices to help mapping
       if (row.length > 0) {
-        console.log(`Row ${i + 30}:`, row.map((v, colIdx) => `[${colIdx}] ${v}`).slice(0, 15)); 
+        console.log(`Row ${i}:`, row.map((v, colIdx) => `[${colIdx}] ${v}`).slice(75, 85)); 
       }
     });
   } catch (err) {
