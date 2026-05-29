@@ -158,7 +158,7 @@ export default function PurchasingPage() {
   const totalSummary = summaryTableData.reduce((sum, row) => sum + (parseFloat(row.col2?.toString().replace(/[^0-9.-]/g, '')) || 0), 0);
 
   return (
-    <div className="min-h-screen bg-[#f8f9fa] p-6 text-slate-900 lg:p-8 font-sans">
+    <div className="min-h-screen bg-[#e2e2e2] p-6 text-slate-900 lg:p-8 font-sans">
       <header className="mb-10 flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between bg-white p-6 rounded-3xl border-b-4 border-[#FFD100] shadow-sm">
         <div>
           <a href="/" className="mb-4 inline-flex items-center gap-2 text-sm font-black text-slate-400 hover:text-[#4A4A49] transition-colors uppercase tracking-widest">
@@ -281,33 +281,33 @@ export default function PurchasingPage() {
             </div>
 
             <div className="overflow-x-auto">
-                <table className="w-full min-w-[1200px] text-left text-sm">
-                  <thead className="bg-slate-50 text-[10px] font-black uppercase tracking-widest text-slate-400 border-b border-slate-100">
+                <table className="w-full min-w-[1200px] text-left text-sm border-collapse border border-slate-200">
+                  <thead className="bg-slate-50 text-[10px] font-black uppercase tracking-widest text-slate-400">
                     <tr>
                       {['ECM ซื้อจ้าง', 'ECM', 'W/O', 'รายการ', 'Equip', 'Date เข้า', 'Date เริ่มงาน', 'Date ออกงาน', 'สถานะ', 'การดำเนินการ'].map((header) => (
-                        <th key={header} className="px-6 py-5 font-black">{header}</th>
+                        <th key={header} className="px-6 py-5 font-black border border-slate-200">{header}</th>
                       ))}
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-50">
+                  <tbody className="">
                     {filteredRows.length > 0 ? filteredRows.map((row, index) => (
                       <tr key={`${row.ecm_buy}-${row.wo}-${index}`} className="hover:bg-yellow-50/30 transition-colors">
-                        <td className="px-6 py-5 font-black text-[#4A4A49]">{row.ecm_buy || '-'}</td>
-                        <td className="px-6 py-5 font-bold text-slate-500">{row.ecm || '-'}</td>
-                        <td className="px-6 py-5 font-bold text-slate-500">{row.wo || '-'}</td>
-                        <td className="max-w-[400px] px-6 py-5 font-bold text-[#4A4A49] leading-relaxed">{row.item || '-'}</td>
-                        <td className="px-6 py-5 font-black text-slate-500">{row.equip || '-'}</td>
-                        <td className="px-6 py-5 font-bold text-slate-500 whitespace-nowrap">{row.date_in || '-'}</td>
-                        <td className="px-6 py-5 font-bold text-slate-500 whitespace-nowrap">{row.date_start || '-'}</td>
-                        <td className="px-6 py-5 font-bold text-slate-500 whitespace-nowrap">{row.date_out || '-'}</td>
-                        <td className="px-6 py-5">
+                        <td className="px-6 py-5 font-black text-[#4A4A49] border border-slate-200">{row.ecm_buy || '-'}</td>
+                        <td className="px-6 py-5 font-bold text-slate-500 border border-slate-200">{row.ecm || '-'}</td>
+                        <td className="px-6 py-5 font-bold text-slate-500 border border-slate-200">{row.wo || '-'}</td>
+                        <td className="max-w-[400px] px-6 py-5 font-bold text-[#4A4A49] leading-relaxed border border-slate-200">{row.item || '-'}</td>
+                        <td className="px-6 py-5 font-black text-slate-500 border border-slate-200">{row.equip || '-'}</td>
+                        <td className="px-6 py-5 font-bold text-slate-500 whitespace-nowrap border border-slate-200">{row.date_in || '-'}</td>
+                        <td className="px-6 py-5 font-bold text-slate-500 whitespace-nowrap border border-slate-200">{row.date_start || '-'}</td>
+                        <td className="px-6 py-5 font-bold text-slate-500 whitespace-nowrap border border-slate-200">{row.date_out || '-'}</td>
+                        <td className="px-6 py-5 border border-slate-200">
                           <span className={`inline-flex rounded-lg px-3 py-1.5 text-[10px] font-black uppercase tracking-widest shadow-sm ${row.status?.includes('Finish') ? 'bg-emerald-100 text-emerald-700' : 'bg-[#FFD100] text-[#4A4A49]'}`}>{row.status || '-'}</span>
                         </td>
-                        <td className="px-6 py-5 font-bold text-slate-500">{row.action || '-'}</td>
+                        <td className="px-6 py-5 font-bold text-slate-500 border border-slate-200">{row.action || '-'}</td>
                       </tr>
                     )) : (
                       <tr>
-                        <td className="px-6 py-20 text-center text-xs font-black text-slate-300 uppercase tracking-widest" colSpan={10}>No data found matching your filters</td>
+                        <td className="px-6 py-20 text-center text-xs font-black text-slate-300 uppercase tracking-widest border border-slate-200" colSpan={10}>No data found matching your filters</td>
                       </tr>
                     )}
                   </tbody>
