@@ -216,8 +216,20 @@ export default function DashboardPage() {
     title: { text: '' },
     credits: { enabled: false },
     accessibility: { enabled: false },
-    xAxis: { categories: ['W11', 'W12', 'W13', 'W14'], gridLineWidth: 0 },
-    yAxis: { title: { text: '' }, gridLineWidth: 0 },
+    xAxis: {
+      categories: ['W11', 'W12', 'W13', 'W14'],
+      gridLineWidth: 1,
+      gridLineColor: '#cbd5e1',
+      lineColor: '#94a3b8',
+      lineWidth: 1,
+    },
+    yAxis: {
+      title: { text: '' },
+      gridLineWidth: 1,
+      gridLineColor: '#cbd5e1',
+      lineColor: '#94a3b8',
+      lineWidth: 1,
+    },
     plotOptions: { column: { borderRadius: 4, depth: 25, dataLabels: { enabled: true } } },
     series: equipmentData.filter((e: any) => e.name !== 'All').map((e: any) => ({
         name: e.name, 
@@ -273,8 +285,8 @@ export default function DashboardPage() {
             </h3>
             <Info className="text-slate-300 w-4 h-4 md:w-5 h-5 cursor-help" />
           </div>
-          <div className="grid grid-cols-1 xl:grid-cols-[minmax(240px,0.68fr)_minmax(520px,1.55fr)_minmax(300px,0.9fr)] gap-5 md:gap-6 items-stretch">
-              <div className="w-full">
+          <div className="grid grid-cols-1 xl:grid-cols-[minmax(320px,0.82fr)_minmax(500px,1.45fr)_minmax(300px,0.9fr)] gap-5 md:gap-6 items-stretch">
+              <div className="w-full xl:max-w-[320px] xl:self-start">
                 <WOBlock statusData={statusData} />
               </div>
               <div className="flex justify-center items-center bg-white/30 rounded-2xl p-3 md:p-4 border border-slate-100">
@@ -337,14 +349,14 @@ export default function DashboardPage() {
       {/* Section 3: Work by Group */}
       <div className="bg-slate-50/80 border-b-4 border-slate-200 p-4 md:p-8 rounded-[1.5rem] md:rounded-[2rem] shadow-sm relative overflow-hidden mb-8 md:mb-10">
           <div className="flex items-center justify-between mb-6 md:mb-8">
-            <h3 className="font-black text-[#4A4A49] uppercase text-xs md:text-sm tracking-widest flex items-center gap-2">
-              <div className="w-2 h-4 md:h-6 bg-[#F37021] rounded-full"></div>
+            <h3 className="font-black text-[#4A4A49] uppercase text-xl md:text-3xl tracking-wide flex items-center gap-3">
+              <div className="w-3 h-7 md:h-10 bg-[#F37021] rounded-full"></div>
               งานเข้าตามกลุ่มงาน
             </h3>
             <Activity className="text-slate-300 w-4 h-4 md:w-5 h-5" />
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-10 items-start">
-              <div className="flex flex-col bg-white/30 rounded-2xl p-2 md:p-4 border border-slate-100 overflow-hidden">
+              <div className="flex flex-col bg-white/70 rounded-2xl p-3 md:p-5 border-2 border-slate-300 shadow-sm overflow-hidden">
                 <HighchartsReact highcharts={Highcharts} options={equipChartOptions} />
               </div>
               <div className="overflow-hidden rounded-2xl border-2 border-slate-100 overflow-x-auto">

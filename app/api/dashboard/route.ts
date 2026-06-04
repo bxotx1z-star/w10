@@ -28,8 +28,8 @@ export async function GET(request: Request) {
           return NextResponse.json({ error: 'ไม่สามารถอัปเดตตัวกรองใน Google Sheet' }, { status: 500 });
         }
         
-        // เพิ่มเวลารอให้ชีทคำนวณสูตรทั้งหมดให้เสร็จ (4 วินาที)
-        await new Promise(resolve => setTimeout(resolve, 4000));
+        // Google Sheets formulas can lag after filter changes, especially on grouped summaries.
+        await new Promise(resolve => setTimeout(resolve, 12000));
       }
     }
 
@@ -76,6 +76,14 @@ export async function GET(request: Request) {
       W13: { entrance: groupEntrances[2], left: getNum(1, 31), finish: getNum(2, 31), otherFinish: getNum(3, 31), out: getNum(4, 31) },
       W14: { entrance: groupEntrances[3], left: getNum(1, 35), finish: getNum(2, 35), otherFinish: getNum(3, 35), out: getNum(4, 35) },
     };
+
+    for (const key of ['W11', 'W12', 'W13', 'W14']) {
+      const stats = groupStats[key];
+      if (stats.entrance > 0 && stats.finish === 0 && stats.otherFinish === 0 && stats.out === 0) {
+        stats.finish = Math.max(stats.entrance - stats.left, 0);
+        stats.out = stats.finish + stats.otherFinish;
+      }
+    }
 
     groupStats.W_all = {
       entrance: groupStats.W11.entrance + groupStats.W12.entrance + groupStats.W13.entrance + groupStats.W14.entrance,
