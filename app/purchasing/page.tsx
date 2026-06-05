@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
-import { ArrowLeft, CalendarDays, ClipboardList, Filter, RefreshCw, Search, ShoppingCart, ShoppingBag, Package, Truck, CreditCard } from 'lucide-react';
+import { ArrowLeft, CalendarDays, ChevronDown, ClipboardList, Clock, Filter, RefreshCw, Search, ShoppingCart, ShoppingBag, Package, Truck, CreditCard } from 'lucide-react';
 import Highcharts from 'highcharts';
 import HighchartsReact from 'highcharts-react-official';
 import { Cell, Pie, PieChart, ResponsiveContainer } from 'recharts';
@@ -98,6 +98,7 @@ export default function PurchasingPage() {
   const [modulesLoaded, setModulesLoaded] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
+  const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
     import('highcharts/highcharts-3d').then(() => setModulesLoaded(true)).catch(() => setModulesLoaded(true));
@@ -143,6 +144,10 @@ export default function PurchasingPage() {
       console.error('LocalStorage write error:', e);
     }
     loadData(year, val);
+  };
+
+  const handleRefresh = () => {
+    loadData(year, month);
   };
 
   const gauges = data?.gauges || {};
@@ -334,9 +339,38 @@ export default function PurchasingPage() {
               {THAI_MONTHS.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
             </select>
           </div>
-          <a href="/" className="px-4 md:px-6 py-2 md:py-3 bg-[#ffe08a] text-[#4A4A49] rounded-xl md:rounded-2xl text-xs md:text-sm font-black hover:bg-[#ffd56a] shadow-lg shadow-yellow-200/50 transition-all active:scale-95 flex items-center gap-2">
-            <ArrowLeft size={16} strokeWidth={3} /> กลับหน้าหลัก
-          </a>
+          <button
+            type="button"
+            onClick={handleRefresh}
+            disabled={isLoading}
+            className="px-3 md:px-4 py-2 md:py-3 bg-white text-[#4A4A49] rounded-xl md:rounded-2xl text-xs md:text-sm font-black hover:bg-slate-50 border border-slate-200 shadow-sm transition-all active:scale-95 flex items-center gap-2 disabled:opacity-60"
+          >
+            <RefreshCw size={16} strokeWidth={3} className={isLoading ? 'animate-spin text-[#d4a300]' : 'text-slate-500'} />
+            รีเฟรชข้อมูล
+          </button>
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setMenuOpen((value) => !value)}
+              className="px-4 md:px-6 py-2 md:py-3 bg-[#ffe08a] text-[#4A4A49] rounded-xl md:rounded-2xl text-xs md:text-sm font-black hover:bg-[#ffd56a] shadow-lg shadow-yellow-200/50 transition-all active:scale-95 flex items-center gap-2"
+            >
+              เมนูหน้า
+              <ChevronDown size={16} strokeWidth={3} className={menuOpen ? 'rotate-180 transition-transform' : 'transition-transform'} />
+            </button>
+            {menuOpen && (
+              <div className="absolute right-0 top-full z-20 mt-2 w-64 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl shadow-slate-300/40">
+                <a href="/" className="flex items-center gap-3 px-4 py-3 text-sm font-black text-[#4A4A49] hover:bg-slate-50">
+                  <ArrowLeft size={18} className="text-slate-500" /> หน้าหลัก
+                </a>
+                <a href="/purchasing" className="flex items-center gap-3 border-t border-slate-100 px-4 py-3 text-sm font-black text-[#4A4A49] hover:bg-yellow-50">
+                  <ShoppingCart size={18} className="text-[#d4a300]" /> จัดซื้อจัดจ้าง
+                </a>
+                <a href="/ot-summary" className="flex items-center gap-3 border-t border-slate-100 px-4 py-3 text-sm font-black text-[#4A4A49] hover:bg-sky-50">
+                  <Clock size={18} className="text-sky-500" /> สรุปโอทีลูกจ้างและพนักงาน
+                </a>
+              </div>
+            )}
+          </div>
         </div>
       </header>
 

@@ -35,6 +35,39 @@ function getSheetsClient() {
   };
 }
 
+function getSheetsClientForSheet(sheetId: string) {
+  const clientEmail = process.env.GOOGLE_CLIENT_EMAIL;
+  const privateKey = process.env.GOOGLE_PRIVATE_KEY;
+
+  if (!clientEmail || !privateKey || !sheetId) {
+    console.error('Missing Google Sheets environment variables');
+    return null;
+  }
+
+  let sanitizedKey = privateKey.replace(/^"(.*)"$/, '$1');
+  const keyStart = sanitizedKey.indexOf('-----BEGIN PRIVATE KEY-----');
+
+  if (keyStart !== -1) {
+    sanitizedKey = sanitizedKey.substring(keyStart);
+  }
+
+  sanitizedKey = sanitizedKey.replace(/\\n/g, '\n');
+
+  const auth = new google.auth.JWT({
+    email: clientEmail,
+    key: sanitizedKey,
+    scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+  });
+
+  return {
+    sheetId,
+    sheets: google.sheets({
+      version: 'v4',
+      auth,
+    }),
+  };
+}
+
 export async function updateDashboardFilters(year: string, month: string) {
   const client = getSheetsClient();
   if (!client) return null;
@@ -91,6 +124,52 @@ export async function getDashboardData() {
 
     console.error('Google Sheets API error:', error.message);
 
+    return null;
+  }
+}
+
+export async function getEmployeeOtSheetData() {
+  const sheetId = process.env.GOOGLE_OT_EMPLOYEE_SHEET_ID;
+  if (!sheetId) {
+    console.error('Missing GOOGLE_OT_EMPLOYEE_SHEET_ID');
+    return null;
+  }
+
+  const client = getSheetsClientForSheet(sheetId);
+  if (!client) return null;
+
+  try {
+    const response = await client.sheets.spreadsheets.values.get({
+      spreadsheetId: client.sheetId,
+      range: "'สรุปOTประจำเดือนปี2569_กบย-ช._หสบ-ช.'!B2:AL20",
+    });
+
+    return response.data.values || [];
+  } catch (error: any) {
+    console.error('Google Sheets OT API error:', error.message);
+    return null;
+  }
+}
+
+export async function getContractorOtSheetData() {
+  const sheetId = process.env.GOOGLE_OT_CONTRACTOR_SHEET_ID;
+  if (!sheetId) {
+    console.error('Missing GOOGLE_OT_CONTRACTOR_SHEET_ID');
+    return null;
+  }
+
+  const client = getSheetsClientForSheet(sheetId);
+  if (!client) return null;
+
+  try {
+    const response = await client.sheets.spreadsheets.values.get({
+      spreadsheetId: client.sheetId,
+      range: "'สรุปOT0669'!B2:AO34",
+    });
+
+    return response.data.values || [];
+  } catch (error: any) {
+    console.error('Google Sheets Contractor OT API error:', error.message);
     return null;
   }
 }
