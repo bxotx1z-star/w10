@@ -55,7 +55,7 @@ export async function GET(request: Request) {
     const gauges = {
       empNorm: getNum(3, 81), // Row 4
       empOT: getNum(4, 81), // Row 5
-      w11_1: getNum(11, 74) // Row 12 (W11 count)
+      w11_1: getNum(9, 74) // 'Dashboard W10 All info'!BW10
     };
 
     // =========================
@@ -77,7 +77,7 @@ export async function GET(request: Request) {
     // =========================
     const summaryTableData = [];
 
-    for (let r = 11; r <= 14; r++) {
+    for (let r = 11; r <= 15; r++) {
       summaryTableData.push({
         col1: infoData[r]?.[73] || '',
         col2: infoData[r]?.[74] || ''
@@ -90,7 +90,7 @@ export async function GET(request: Request) {
     // =========================
     const secondChartData = [];
 
-    for (let r = 1; r <= 7; r++) {
+    for (let r = 1; r <= 8; r++) {
       secondChartData.push({
         name: infoData[r]?.[73] || '',
         value: getNum(r, 74)
@@ -103,7 +103,7 @@ export async function GET(request: Request) {
     // =========================
     const secondTableData = [];
 
-    for (let r = 1; r <= 7; r++) {
+    for (let r = 1; r <= 9; r++) {
       secondTableData.push({
         col1: infoData[r]?.[73] || '',
         col2: infoData[r]?.[74] || ''

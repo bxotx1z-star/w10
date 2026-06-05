@@ -12,7 +12,7 @@ type PairRow = { col1: string; col2: string | number; };
 type PurchaseRow = { ecm_buy: string; ecm: string; wo: string; item: string; equip: string; date_in: string; date_start: string; date_out: string; status: string; action: string; };
 type PurchasingData = { gauges?: GaugeData; chartData?: NameValue[]; summaryTableData?: PairRow[]; secondChartData?: NameValue[]; secondTableData?: PairRow[]; purchaseList?: PurchaseRow[]; currentYear?: string; currentMonth?: string; error?: string; };
 
-const chartColors = ['#FFD100', '#F37021', '#4A4A49', '#16a34a', '#7c3aed', '#db2777', '#0891b2', '#ea580c'];
+const chartColors = ['#fde68a', '#fdba74', '#93c5fd', '#86efac', '#c4b5fd', '#f9a8d4', '#67e8f9', '#fca5a5'];
 
 import ReactSpeedometer from 'react-d3-speedometer';
 
@@ -21,8 +21,8 @@ const ModernGauge = ({ value, label }: { value?: number; label: string }) => {
   const clampedValue = Math.min(Math.max(safeValue, -3), 3);
   
   return (
-    <div className="flex h-full flex-col items-center bg-white p-3 rounded-2xl border border-slate-200 shadow-sm w-full relative">
-      <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">{label}</div>
+    <div className="flex h-full flex-col items-center bg-[#fff8e8] p-4 rounded-2xl border border-[#f7e7b7] shadow-sm shadow-yellow-100/50 w-full relative">
+      <div className="text-[12px] font-black text-slate-500 uppercase tracking-wide mb-1">{label}</div>
       <div className="h-28 w-44">
         <ReactSpeedometer
           value={Number(clampedValue.toFixed(2))}
@@ -30,7 +30,7 @@ const ModernGauge = ({ value, label }: { value?: number; label: string }) => {
           maxValue={3}
           segments={3}
           customSegmentStops={[-3, -1, 1, 3]}
-          segmentColors={['#FCD34D', '#4ADE80', '#F87171']}
+          segmentColors={['#fde68a', '#86efac', '#fca5a5']}
           needleColor="#1e293b"
           needleHeightRatio={0.6}
           startColor="#FCD34D"
@@ -52,7 +52,7 @@ const StatCard = ({ label, value, tone = 'slate' }: { label: string; value: stri
   if (tone === 'emerald' || tone === 'amber') return null;
   
   const toneClasses = { 
-    blue: 'bg-amber-50/80 text-slate-900 border-amber-200', 
+    blue: 'bg-[#fff7d6] text-slate-900 border-[#f6d77a]', 
     emerald: 'bg-emerald-50 text-emerald-900 border-emerald-100', 
     amber: 'bg-amber-50 text-amber-900 border-amber-100', 
     slate: 'bg-white text-slate-900 border-slate-200' 
@@ -65,10 +65,10 @@ const StatCard = ({ label, value, tone = 'slate' }: { label: string; value: stri
   };
 
   return (
-    <div className={`rounded-2xl border-2 p-5 shadow-sm relative overflow-hidden group hover:shadow-md transition-all ${toneClasses[tone]}`}>
+    <div className={`grid min-h-[150px] grid-rows-[auto_1fr] rounded-2xl border-2 p-6 shadow-sm shadow-yellow-100/60 relative overflow-hidden group hover:shadow-md transition-all ${toneClasses[tone]}`}>
       {iconMap[label]}
-      <div className="whitespace-nowrap text-[11px] font-black uppercase tracking-widest text-slate-500 z-10">{label}</div>
-      <div className="mt-2 text-4xl font-black z-10 text-[#4A4A49] group-hover:scale-105 transition-transform">{value}</div>
+      <div className="whitespace-nowrap text-[13px] font-black uppercase tracking-wide text-slate-500 z-10">{label}</div>
+      <div className="flex items-center justify-center text-5xl font-black z-10 text-[#4A4A49] group-hover:scale-105 transition-transform">{value}</div>
     </div>
   );
 };
@@ -93,6 +93,7 @@ export default function PurchasingPage() {
   const [year, setYear] = useState("2025");
   const [month, setMonth] = useState("all");
   const [statusFilter, setStatusFilter] = useState('all');
+  const [hoveredPurchaseStatus, setHoveredPurchaseStatus] = useState('');
   const [query, setQuery] = useState('');
   const [modulesLoaded, setModulesLoaded] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -151,11 +152,85 @@ export default function PurchasingPage() {
   const secondTableData = data?.secondTableData || [];
   const purchaseList = data?.purchaseList || [];
 
+  const normalizeStatus = (value: string) => value
+    .toString()
+    .trim()
+    .replace(/^\d+\s*[.)]\s*/, '')
+    .replace(/\s+/g, '')
+    .toLowerCase();
+
+  const isSameStatus = (left: string, right: string) => {
+    const normalizedLeft = normalizeStatus(left);
+    const normalizedRight = normalizeStatus(right);
+
+    return !!normalizedLeft && !!normalizedRight && (normalizedLeft === normalizedRight || normalizedLeft.includes(normalizedRight) || normalizedRight.includes(normalizedLeft));
+  };
+
   const statusOptions = useMemo(() => { const statuses = purchaseList.map((row) => row.status).filter(Boolean); return ['all', ...Array.from(new Set(statuses))]; }, [purchaseList]);
   const primaryChartData = chartData.map((item) => ({ name: item.name || '-', y: item.value || 0 })).filter((item) => item.y > 0);
-  const secondaryChartData = secondChartData.map((item, index) => ({ name: item.name || '-', y: item.value || 0, color: chartColors[index % chartColors.length] })).filter((item) => item.name !== '-');
+  const chartHasSelectedStatus = !!hoveredPurchaseStatus && secondChartData.some((item) => isSameStatus(item.name || '', hoveredPurchaseStatus));
+  const secondaryChartData = secondChartData
+    .map((item, index) => {
+      const statusName = item.name || '-';
+      const isSelected = chartHasSelectedStatus && isSameStatus(statusName, hoveredPurchaseStatus);
+      const isDimmed = chartHasSelectedStatus && !isSelected;
+      const baseColor = chartColors[index % chartColors.length];
+
+      return {
+        name: statusName,
+        y: item.value || 0,
+        color: isDimmed ? 'rgba(148, 163, 184, 0.22)' : baseColor,
+        borderColor: isSelected ? '#334155' : isDimmed ? 'rgba(148, 163, 184, 0.35)' : '#64748b',
+        borderWidth: isSelected ? 3 : 1,
+        dataLabels: {
+          style: {
+            color: isDimmed ? 'rgba(75, 85, 99, 0.35)' : '#374151',
+            fontWeight: '800',
+            textOutline: 'none',
+          },
+        },
+        custom: { statusName, isSelected },
+        events: {
+          click: function (this: any) {
+            setHoveredPurchaseStatus(String(this.options?.custom?.statusName || this.name || ''));
+          },
+        },
+      };
+    })
+    .filter((item) => item.name !== '-');
   const hasSecondaryChartData = secondaryChartData.length > 0;
-  const filteredRows = useMemo(() => { const normalizedQuery = query.trim().toLowerCase(); return purchaseList.filter((row) => { const matchesStatus = statusFilter === 'all' || row.status === statusFilter; const matchesQuery = !normalizedQuery || Object.values(row).some((value) => value?.toString().toLowerCase().includes(normalizedQuery)); return matchesStatus && matchesQuery; }); }, [purchaseList, query, statusFilter]);
+  const filteredRows = useMemo(() => {
+    const normalizedQuery = query.trim().toLowerCase();
+    const normalizedHoveredStatus = normalizeStatus(hoveredPurchaseStatus);
+
+    return purchaseList.filter((row) => {
+      const normalizedRowStatus = normalizeStatus(row.status || '');
+      const matchesStatus = statusFilter === 'all' || row.status === statusFilter;
+      const matchesHoveredStatus = !normalizedHoveredStatus || normalizedRowStatus === normalizedHoveredStatus || normalizedRowStatus.includes(normalizedHoveredStatus) || normalizedHoveredStatus.includes(normalizedRowStatus);
+      const matchesQuery = !normalizedQuery || Object.values(row).some((value) => value?.toString().toLowerCase().includes(normalizedQuery));
+      return matchesStatus && matchesHoveredStatus && matchesQuery;
+    });
+  }, [hoveredPurchaseStatus, purchaseList, query, statusFilter]);
+
+  const handleStatusChartPointer = (event: React.MouseEvent<HTMLDivElement>) => {
+    if (secondaryChartData.length === 0) return;
+
+    const rect = event.currentTarget.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
+    const plotLeft = 54;
+    const plotRight = rect.width - 18;
+    const plotTop = 36;
+    const plotBottom = rect.height - 46;
+
+    if (x < plotLeft || x > plotRight || y < plotTop || y > plotBottom) return;
+
+    const ratio = (x - plotLeft) / Math.max(plotRight - plotLeft, 1);
+    const index = Math.min(secondaryChartData.length - 1, Math.max(0, Math.floor(ratio * secondaryChartData.length)));
+    const statusName = secondaryChartData[index]?.name;
+
+    if (statusName) setHoveredPurchaseStatus(statusName);
+  };
   
   const getStatusStyle = (status: string) => {
     if (!status) return 'bg-slate-100 text-slate-400';
@@ -174,27 +249,80 @@ export default function PurchasingPage() {
     return 'bg-[#FFD100] text-[#4A4A49]'; // default
   };
 
-  const chartOptions = { chart: { type: 'pie', backgroundColor: 'transparent', options3d: { enabled: true, alpha: 45 }, height: 280 }, colors: chartColors, credits: { enabled: false }, title: { text: '' }, plotOptions: { pie: { innerSize: '58%', depth: 38, colorByPoint: true, dataLabels: { enabled: true, format: '{point.name}: {point.percentage:.0f}%', style: { fontWeight: '700', textOutline: 'none', color: '#4A4A49' } } } }, series: [{ name: 'Purchasing', data: primaryChartData }] };
-  const equipChartOptions = { chart: { type: 'column', backgroundColor: 'transparent', options3d: { enabled: true, alpha: 8, beta: 12, depth: 45 }, height: 280 }, credits: { enabled: false }, title: { text: '' }, xAxis: { categories: secondaryChartData.map((item) => item.name), lineColor: '#e2e8f0' }, yAxis: { title: { text: '' }, gridLineColor: '#f1f5f9' }, legend: { enabled: false }, plotOptions: { column: { borderRadius: 4, depth: 24, dataLabels: { enabled: true, style: { color: '#4A4A49' } } } }, series: [{ name: 'จำนวน', data: secondaryChartData }] };
+  const chartOptions = { chart: { type: 'pie', backgroundColor: 'transparent', options3d: { enabled: true, alpha: 45 }, height: 300 }, colors: chartColors, credits: { enabled: false }, title: { text: '' }, plotOptions: { pie: { innerSize: '58%', depth: 38, colorByPoint: true, dataLabels: { enabled: true, format: '{point.name}: {point.percentage:.0f}%', style: { fontWeight: '800', textOutline: 'none', color: '#4b5563' } } } }, series: [{ name: 'Purchasing', data: primaryChartData }] };
+  const equipChartOptions = {
+    chart: { type: 'column', backgroundColor: 'transparent', options3d: { enabled: true, alpha: 8, beta: 12, depth: 45 }, height: 300 },
+    credits: { enabled: false },
+    title: { text: '' },
+    tooltip: {
+      backgroundColor: '#fffdf7',
+      borderColor: '#f9a66c',
+      borderRadius: 12,
+      borderWidth: 2,
+      shadow: true,
+      formatter: function (this: any) {
+        const statusName = String(this.point?.custom?.statusName || this.x || this.point?.category || this.point?.name || '');
+        return `<b>${statusName}</b><br/><span style="font-weight:800">${this.y}</span> รายการ`;
+      },
+      style: { color: '#374151', fontWeight: '700' },
+    },
+    xAxis: { categories: secondaryChartData.map((item) => item.name), gridLineWidth: 1, gridLineColor: '#cbd5e1', lineColor: '#94a3b8', lineWidth: 1 },
+    yAxis: { title: { text: '' }, gridLineWidth: 1, gridLineColor: '#cbd5e1', lineColor: '#94a3b8', lineWidth: 1 },
+    legend: { enabled: false },
+    plotOptions: {
+      series: {
+        point: {
+          events: {
+            click: function (this: any) {
+              setHoveredPurchaseStatus(String(this.options?.custom?.statusName || this.category || this.name || ''));
+            },
+          },
+        },
+      },
+      column: {
+        borderColor: '#64748b',
+        borderRadius: 4,
+        borderWidth: 1,
+        cursor: 'pointer',
+        depth: 24,
+        dataLabels: { enabled: true, style: { color: '#4b5563', fontWeight: '800' } },
+        point: {
+          events: {
+            click: function (this: any) {
+              setHoveredPurchaseStatus(String(this.options?.custom?.statusName || this.category || this.name || ''));
+            },
+          },
+        },
+        states: {
+          hover: {
+            brightness: 0.12,
+            borderColor: '#334155',
+            borderWidth: 3,
+          },
+        },
+      },
+    },
+    series: [{ name: 'จำนวน', data: secondaryChartData }],
+  };
   const totalSummary = summaryTableData.reduce((sum, row) => sum + (parseFloat(row.col2?.toString().replace(/[^0-9.-]/g, '')) || 0), 0);
 
   return (
-    <div className="min-h-screen bg-[#e2e2e2] p-6 text-slate-900 lg:p-8 font-sans">
-      <header className="mb-10 flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between bg-white p-6 rounded-3xl border-b-4 border-[#FFD100] shadow-sm">
+    <div className="min-h-screen bg-[#e2e2e2] p-4 text-slate-900 md:p-8 font-sans">
+      <header className="mb-10 flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between bg-white p-4 md:p-6 rounded-2xl md:rounded-3xl border-b-4 border-[#ffd56d] shadow-sm shadow-slate-200/70">
         <div>
           <div className="flex items-center gap-4">
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#4A4A49] text-[#FFD100] shadow-lg">
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#5c607f] text-[#ffef9a] shadow-lg shadow-indigo-100/60">
               <ShoppingCart size={28} strokeWidth={2.5} />
             </div>
             <div>
-              <h1 className="text-3xl font-black uppercase tracking-tight text-[#4A4A49]">การจัดซื้อจัดจ้าง</h1>
+              <h1 className="text-3xl md:text-4xl font-black uppercase tracking-tight text-[#4A4A49]">การจัดซื้อจัดจ้าง</h1>
               <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mt-0.5">EGAT Procurement Summary</p>
             </div>
           </div>
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
-          {isLoading && <span className="flex items-center text-xs font-black text-[#FFD100] animate-pulse mr-2 bg-yellow-50 px-2 py-1 rounded-lg uppercase">Updating...</span>}
+          {isLoading && <span className="flex items-center text-xs font-black text-[#d4a300] animate-pulse mr-2 bg-yellow-50 px-2 py-1 rounded-lg uppercase">Updating...</span>}
           <div className="flex items-center gap-1.5 bg-slate-100 p-1.5 rounded-2xl border border-slate-200 shadow-inner">
             <Filter size={16} className="ml-2 text-slate-400" />
             <select className="h-10 rounded-xl bg-white px-4 text-sm font-black text-[#4A4A49] outline-none shadow-sm cursor-pointer hover:bg-slate-50 transition" value={year} onChange={handleYearChange}>
@@ -206,7 +334,7 @@ export default function PurchasingPage() {
               {THAI_MONTHS.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
             </select>
           </div>
-          <a href="/" className="px-4 md:px-6 py-2 md:py-3 bg-[#FFD100] text-[#4A4A49] rounded-xl md:rounded-2xl text-xs md:text-sm font-black hover:bg-[#ffdb33] shadow-lg shadow-yellow-200/50 transition-all active:scale-95 flex items-center gap-2">
+          <a href="/" className="px-4 md:px-6 py-2 md:py-3 bg-[#ffe08a] text-[#4A4A49] rounded-xl md:rounded-2xl text-xs md:text-sm font-black hover:bg-[#ffd56a] shadow-lg shadow-yellow-200/50 transition-all active:scale-95 flex items-center gap-2">
             <ArrowLeft size={16} strokeWidth={3} /> กลับหน้าหลัก
           </a>
         </div>
@@ -215,8 +343,8 @@ export default function PurchasingPage() {
       {error ? (
         <div className="rounded-2xl border-2 border-red-100 bg-red-50 p-6 text-base font-black text-red-700 shadow-sm">{error}</div>
       ) : isLoading || !modulesLoaded ? (
-        <div className="flex items-center justify-center gap-3 rounded-[2rem] border-2 border-slate-100 bg-white p-20 text-base font-black text-slate-400 shadow-sm animate-pulse uppercase tracking-widest">
-          <RefreshCw size={24} className="animate-spin text-[#FFD100]" /> กำลังโหลดข้อมูล...
+        <div className="flex items-center justify-center gap-3 rounded-[2rem] border-2 border-[#dbeafe] bg-[#e8f5ff]/95 p-20 text-base font-black text-slate-400 shadow-sm animate-pulse uppercase tracking-widest">
+          <RefreshCw size={24} className="animate-spin text-[#d4a300]" /> กำลังโหลดข้อมูล...
         </div>
       ) : (
         <>
@@ -230,24 +358,24 @@ export default function PurchasingPage() {
             </section>
 
             <section className="contents">
-              <div className="rounded-[2rem] border-b-4 border-slate-200 bg-white p-8 shadow-sm relative overflow-hidden group hover:shadow-md transition-all">
+              <div className="rounded-[2rem] border-b-4 border-[#b9dcff] bg-[#e8f5ff]/95 p-4 md:p-8 shadow-sm shadow-sky-100/60 relative overflow-hidden group hover:shadow-md transition-all">
                 <div className="mb-8 flex items-center justify-between gap-3">
-                  <h2 className="font-black text-[#4A4A49] uppercase text-sm tracking-widest flex items-center gap-2">
-                    <div className="w-2 h-6 bg-[#FFD100] rounded-full"></div>
+                  <h2 className="font-black text-[#4A4A49] uppercase text-xl md:text-3xl tracking-wide flex items-center gap-3">
+                    <div className="w-3 h-7 md:h-10 bg-[#ffe08a] rounded-full"></div>
                     ปริมาณการซื้อ/จ้างหมวด
                   </h2>
-                  <ClipboardList size={20} className="text-slate-300 group-hover:text-[#FFD100] transition-colors" />
+                  <ClipboardList size={24} className="text-slate-300 group-hover:text-[#d4a300] transition-colors" />
                 </div>
                 <div className="grid grid-cols-1 items-center gap-6">
                   {primaryChartData.length > 0 ? <HighchartsReact highcharts={Highcharts} options={chartOptions} /> : <div className="flex h-[280px] items-center justify-center rounded-2xl bg-slate-50 text-xs font-black text-slate-400 uppercase tracking-widest">No Graph Data</div>}
-                  <div className="overflow-hidden rounded-2xl border-2 border-slate-50">
-                    <table className="w-full text-center text-xs font-black text-slate-500">
-                      <thead className="bg-slate-50/80 text-slate-500 border-b-2 border-slate-100">
-                        <tr>{summaryTableData.map((row, index) => <th key={`${row.col1}-${index}`} className="whitespace-nowrap p-4 uppercase tracking-tighter">{row.col1 || '-'}</th>)}</tr>
+                  <div className="overflow-hidden rounded-2xl border-2 border-[#cfe6f7]">
+                    <table className="w-full text-center text-[13px] md:text-[15px] font-black text-slate-500">
+                      <thead className="bg-[#eef6ff]/90 text-slate-600 border-b-2 border-[#cfe6f7]">
+                        <tr>{summaryTableData.map((row, index) => <th key={`${row.col1}-${index}`} className="whitespace-nowrap p-4 uppercase tracking-normal">{row.col1 || '-'}</th>)}</tr>
                       </thead>
                       <tbody>
-                        <tr className="bg-white hover:bg-yellow-50/20 transition-colors">
-                          {summaryTableData.map((row, index) => <td key={`${row.col2}-${index}`} className="whitespace-nowrap p-4 text-[#4A4A49] text-base font-black border-t border-slate-50">{row.col2 || 0}</td>)}
+                        <tr className="bg-[#fffdf7]/80 hover:bg-yellow-50/40 transition-colors">
+                          {summaryTableData.map((row, index) => <td key={`${row.col2}-${index}`} className="whitespace-nowrap p-4 text-[#4A4A49] text-lg md:text-xl font-black border-t border-[#cfe6f7]">{row.col2 || 0}</td>)}
                         </tr>
                       </tbody>
                     </table>
@@ -255,23 +383,38 @@ export default function PurchasingPage() {
                 </div>
               </div>
 
-              <div className="rounded-[2rem] border-b-4 border-slate-200 bg-white p-8 shadow-sm relative overflow-hidden group hover:shadow-md transition-all">
+              <div className="rounded-[2rem] border-b-4 border-[#c7d7ff] bg-[#edf3ff]/95 p-4 md:p-8 shadow-sm shadow-sky-100/60 relative overflow-hidden group hover:shadow-md transition-all">
                 <div className="mb-8 flex items-center justify-between gap-3">
-                  <h2 className="font-black text-[#4A4A49] uppercase text-sm tracking-widest flex items-center gap-2">
-                    <div className="w-2 h-6 bg-[#F37021] rounded-full"></div>
+                  <h2 className="font-black text-[#4A4A49] uppercase text-xl md:text-3xl tracking-wide flex items-center gap-3">
+                    <div className="w-3 h-7 md:h-10 bg-[#f9a66c] rounded-full"></div>
                     สถานะการซื้อจ้าง
                   </h2>
-                  <CalendarDays size={20} className="text-slate-300 group-hover:text-orange-400 transition-colors" />
+                  <CalendarDays size={24} className="text-slate-300 group-hover:text-orange-400 transition-colors" />
                 </div>
-                {hasSecondaryChartData ? <HighchartsReact highcharts={Highcharts} options={equipChartOptions} /> : <div className="flex h-[280px] items-center justify-center rounded-2xl bg-slate-50 text-xs font-black text-slate-400 uppercase tracking-widest">No Graph Data</div>}
-                <div className="mt-6 overflow-hidden rounded-2xl border-2 border-slate-50">
-                  <table className="w-full text-center text-xs font-black text-slate-500">
-                    <thead className="bg-slate-50/80 text-slate-500 border-b-2 border-slate-100">
-                      <tr>{secondTableData.map((row, index) => <th key={`${row.col1}-${index}`} className="whitespace-nowrap p-4 uppercase tracking-tighter">{row.col1 || '-'}</th>)}</tr>
+                {hasSecondaryChartData ? (
+                  <div
+                    onClick={handleStatusChartPointer}
+                    className="cursor-pointer"
+                  >
+                    <HighchartsReact highcharts={Highcharts} options={equipChartOptions} />
+                  </div>
+                ) : <div className="flex h-[280px] items-center justify-center rounded-2xl bg-slate-50 text-xs font-black text-slate-400 uppercase tracking-widest">No Graph Data</div>}
+                <div className="mt-6 overflow-hidden rounded-2xl border-2 border-[#d7def8]">
+                  <table className="w-full text-center text-[13px] md:text-[15px] font-black text-slate-500">
+                    <thead className="bg-[#f0f4ff]/90 text-slate-600 border-b-2 border-[#d7def8]">
+                      <tr>{secondTableData.map((row, index) => <th key={`${row.col1}-${index}`} className="whitespace-nowrap p-4 uppercase tracking-normal">{row.col1 || '-'}</th>)}</tr>
                     </thead>
                     <tbody>
-                      <tr className="bg-white hover:bg-orange-50/20 transition-colors">
-                        {secondTableData.map((row, index) => <td key={`${row.col2}-${index}`} className="whitespace-nowrap p-4 text-[#4A4A49] text-base font-black border-t border-slate-50">{row.col2 || 0}</td>)}
+                      <tr className="bg-[#fffdf7]/80 hover:bg-orange-50/40 transition-colors">
+                        {secondTableData.map((row, index) => (
+                          <td
+                            key={`${row.col2}-${index}`}
+                            onClick={() => row.col1 && setHoveredPurchaseStatus(row.col1)}
+                            className="whitespace-nowrap p-4 text-[#4A4A49] text-lg md:text-xl font-black border-t border-[#d7def8] cursor-pointer hover:bg-[#fff3cf] transition-colors"
+                          >
+                            {row.col2 || 0}
+                          </td>
+                        ))}
                       </tr>
                     </tbody>
                   </table>
@@ -280,20 +423,34 @@ export default function PurchasingPage() {
             </section>
           </div>
 
-          <section className="rounded-[2rem] border-b-4 border-slate-200 bg-white shadow-sm overflow-hidden mb-10 group hover:shadow-md transition-all">
-            <div className="flex flex-col gap-4 border-b-2 border-slate-50 p-8 lg:flex-row lg:items-center lg:justify-between bg-slate-50/30">
+          <section className="rounded-[2rem] border-b-4 border-[#b9dcff] bg-[#e8f5ff]/95 shadow-sm shadow-sky-100/60 overflow-hidden mb-10 group hover:shadow-md transition-all">
+            <div className="flex flex-col gap-4 border-b-2 border-[#cfe6f7] p-4 md:p-8 lg:flex-row lg:items-center lg:justify-between bg-[#f5fbff]/70">
               <div>
-                <h2 className="font-black text-[#4A4A49] uppercase text-sm tracking-widest flex items-center gap-2">
-                  <div className="w-2 h-6 bg-[#4A4A49] rounded-full"></div>
+                <h2 className="font-black text-[#4A4A49] uppercase text-xl md:text-3xl tracking-wide flex items-center gap-3">
+                  <div className="w-3 h-7 md:h-10 bg-[#5c607f] rounded-full"></div>
                   รายละเอียดรายการจัดซื้อจัดจ้าง
                 </h2>
-                <p className="mt-1 text-[11px] font-black uppercase text-slate-400 tracking-tighter">Summary Total: <span className="text-[#4A4A49]">{totalSummary}</span></p>
+                <p className="mt-2 text-[13px] font-black uppercase text-slate-500 tracking-wide">
+                  Summary Total: <span className="text-[#4A4A49]">{totalSummary}</span>
+                  {hoveredPurchaseStatus && (
+                    <span className="ml-3 inline-flex rounded-lg bg-[#fff3cf] px-3 py-1 text-[#9a6700] border border-[#eecb70]">
+                      แสดงเฉพาะ: {hoveredPurchaseStatus}
+                      <button
+                        type="button"
+                        onClick={() => setHoveredPurchaseStatus('')}
+                        className="ml-3 font-black text-[#7c4a00] hover:text-[#4A4A49]"
+                      >
+                        แสดงทั้งหมด
+                      </button>
+                    </span>
+                  )}
+                </p>
               </div>
               <div className="flex flex-col gap-2 sm:flex-row">
                 <div className="relative group/search">
-                  <Search size={18} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within/search:text-[#FFD100] transition-colors" strokeWidth={3} />
+                  <Search size={18} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within/search:text-[#d4a300] transition-colors" strokeWidth={3} />
                   <input
-                    className="h-11 w-full rounded-2xl border-2 border-slate-100 bg-white pl-12 pr-4 text-sm font-bold text-[#4A4A49] outline-none focus:border-[#FFD100] sm:w-80 shadow-sm transition-all"
+                    className="h-12 w-full rounded-2xl border-2 border-[#cfe6f7] bg-[#fffdf7] pl-12 pr-4 text-base font-bold text-[#4A4A49] outline-none focus:border-[#ffe08a] sm:w-80 shadow-sm transition-all"
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
                     placeholder="SEARCH ECM, W/O, ITEMS..."
@@ -303,33 +460,33 @@ export default function PurchasingPage() {
             </div>
 
             <div className="overflow-x-auto">
-                <table className="w-full min-w-[1200px] text-left text-sm border-collapse border border-slate-200">
-                  <thead className="bg-slate-50 text-[10px] font-black uppercase tracking-widest text-slate-400">
+                <table className="w-full min-w-[1200px] text-left text-[15px] border-collapse border border-[#cfe6f7]">
+                  <thead className="bg-[#eef6ff]/90 text-[12px] font-black uppercase tracking-wide text-slate-500">
                     <tr>
                       {['ECM ซื้อจ้าง', 'ECM', 'W/O', 'รายการ', 'Equip', 'Date เข้า', 'Date เริ่มงาน', 'Date ออกงาน', 'สถานะ', 'การดำเนินการ'].map((header) => (
-                        <th key={header} className="px-6 py-5 font-black border border-slate-200">{header}</th>
+                        <th key={header} className="px-6 py-5 font-black border border-[#cfe6f7]">{header}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody className="">
                     {filteredRows.length > 0 ? filteredRows.map((row, index) => (
-                      <tr key={`${row.ecm_buy}-${row.wo}-${index}`} className="hover:bg-yellow-50/30 transition-colors">
-                        <td className="px-6 py-5 font-black text-[#4A4A49] border border-slate-200">{row.ecm_buy || '-'}</td>
-                        <td className="px-6 py-5 font-bold text-slate-500 border border-slate-200">{row.ecm || '-'}</td>
-                        <td className="px-6 py-5 font-bold text-slate-500 border border-slate-200">{row.wo || '-'}</td>
-                        <td className="max-w-[400px] px-6 py-5 font-bold text-[#4A4A49] leading-relaxed border border-slate-200">{row.item || '-'}</td>
-                        <td className="px-6 py-5 font-black text-slate-500 border border-slate-200">{row.equip || '-'}</td>
-                        <td className="px-6 py-5 font-bold text-slate-500 whitespace-nowrap border border-slate-200">{row.date_in || '-'}</td>
-                        <td className="px-6 py-5 font-bold text-slate-500 whitespace-nowrap border border-slate-200">{row.date_start || '-'}</td>
-                        <td className="px-6 py-5 font-bold text-slate-500 whitespace-nowrap border border-slate-200">{row.date_out || '-'}</td>
-                        <td className="px-6 py-5 border border-slate-200">
-                          <span className={`inline-flex rounded-lg px-3 py-1.5 text-[10px] font-black uppercase tracking-widest shadow-sm ${getStatusStyle(row.status)}`}>{row.status || '-'}</span>
+                      <tr key={`${row.ecm_buy}-${row.wo}-${index}`} className="bg-[#fffdf7]/60 hover:bg-yellow-50/50 transition-colors">
+                        <td className="px-6 py-5 font-black text-[#4A4A49] border border-[#cfe6f7]">{row.ecm_buy || '-'}</td>
+                        <td className="px-6 py-5 font-bold text-slate-600 border border-[#cfe6f7]">{row.ecm || '-'}</td>
+                        <td className="px-6 py-5 font-bold text-slate-600 border border-[#cfe6f7]">{row.wo || '-'}</td>
+                        <td className="max-w-[400px] px-6 py-5 font-bold text-[#4A4A49] leading-relaxed border border-[#cfe6f7]">{row.item || '-'}</td>
+                        <td className="px-6 py-5 font-black text-slate-600 border border-[#cfe6f7]">{row.equip || '-'}</td>
+                        <td className="px-6 py-5 font-bold text-slate-600 whitespace-nowrap border border-[#cfe6f7]">{row.date_in || '-'}</td>
+                        <td className="px-6 py-5 font-bold text-slate-600 whitespace-nowrap border border-[#cfe6f7]">{row.date_start || '-'}</td>
+                        <td className="px-6 py-5 font-bold text-slate-600 whitespace-nowrap border border-[#cfe6f7]">{row.date_out || '-'}</td>
+                        <td className="px-6 py-5 border border-[#cfe6f7]">
+                          <span className={`inline-flex rounded-lg px-3 py-1.5 text-[12px] font-black uppercase tracking-wide shadow-sm ${getStatusStyle(row.status)}`}>{row.status || '-'}</span>
                         </td>
-                        <td className="px-6 py-5 font-bold text-slate-500 border border-slate-200">{row.action || '-'}</td>
+                        <td className="px-6 py-5 font-bold text-slate-600 border border-[#cfe6f7]">{row.action || '-'}</td>
                       </tr>
                     )) : (
                       <tr>
-                        <td className="px-6 py-20 text-center text-xs font-black text-slate-300 uppercase tracking-widest border border-slate-200" colSpan={10}>No data found matching your filters</td>
+                        <td className="px-6 py-20 text-center text-sm font-black text-slate-400 uppercase tracking-widest border border-[#cfe6f7]" colSpan={10}>No data found matching your filters</td>
                       </tr>
                     )}
                   </tbody>

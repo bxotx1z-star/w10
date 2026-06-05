@@ -8,11 +8,11 @@ import { ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 
 const GroupBlock = ({ name, stats, themeColor, isSummary = false, imgSrc }: any) => {
   const colors: any = { 
-    yellow: 'bg-gradient-to-br from-amber-50 to-amber-100/50 border-amber-200', 
-    green: 'bg-gradient-to-br from-emerald-50 to-emerald-100/50 border-emerald-200', 
-    pink: 'bg-gradient-to-br from-rose-50 to-rose-100/50 border-rose-200', 
-    blue: 'bg-gradient-to-br from-sky-50 to-sky-100/50 border-sky-200',
-    gray: 'bg-gradient-to-br from-slate-50 to-slate-100/50 border-slate-300'
+    yellow: 'bg-gradient-to-br from-[#fff7d6] to-[#ffe8b8] border-[#f6d77a]', 
+    green: 'bg-gradient-to-br from-[#ddf8ed] to-[#c7f1df] border-[#83dcb7]', 
+    pink: 'bg-gradient-to-br from-[#ffe7ef] to-[#ffd6e1] border-[#f4a8bd]', 
+    blue: 'bg-gradient-to-br from-[#e0f4ff] to-[#cdeaff] border-[#91d4f5]',
+    gray: 'bg-gradient-to-br from-[#f7f4ff] to-[#e9e2ff] border-[#c8b9f6]'
   };
   
   const iconMap: any = {
@@ -45,11 +45,11 @@ const GroupBlock = ({ name, stats, themeColor, isSummary = false, imgSrc }: any)
       </div>
       
       {!isSummary && (
-        <div className="text-[11px] sm:text-[13px] font-bold text-slate-600 space-y-1.5 bg-white/50 backdrop-blur p-2.5 sm:p-3 rounded-2xl border border-white/50 z-10 mt-auto">
-          <div className="flex justify-between px-1"><span>ยังไม่เสร็จ</span><span className="text-slate-900">{stats?.left || 0}</span></div>
-          <div className="flex justify-between px-1"><span>เสร็จ</span><span className="text-slate-900">{stats?.finish || 0}</span></div>
-          <div className="flex justify-between px-1"><span>อื่น</span><span className="text-slate-900">{stats?.otherFinish || 0}</span></div>
-          <div className="flex justify-between font-black text-slate-950 pt-1.5 mt-1 border-t border-slate-200/50 px-1"><span>งานออก</span><span className="text-lg">{stats?.out || 0}</span></div>
+        <div className="text-[13px] sm:text-[15px] font-bold text-slate-600 space-y-2 bg-white/50 backdrop-blur p-3 sm:p-4 rounded-2xl border border-white/50 z-10 mt-auto">
+          <div className="flex justify-between gap-4 px-1"><span>เข้าเดือนนี้ยังไม่เสร็จ</span><span className="text-slate-900">{stats?.left || 0}</span></div>
+          <div className="flex justify-between gap-4 px-1"><span>เข้าเดือนนี้เสร็จ</span><span className="text-slate-900">{stats?.finish || 0}</span></div>
+          <div className="flex justify-between gap-4 px-1"><span>เสร็จจากเดือนอื่น</span><span className="text-slate-900">{stats?.otherFinish || 0}</span></div>
+          <div className="flex justify-between gap-4 font-black text-slate-950 pt-2 mt-2 border-t border-slate-200/50 px-1"><span>งานออก</span><span className="text-xl">{stats?.out || 0}</span></div>
         </div>
       )}
     </div>
@@ -62,9 +62,9 @@ const WOBlock = ({ statusData }: any) => {
   const pendingPct = Math.round(((statusData?.pending || 0) / total) * 100);
   const finishPct = Math.round(((statusData?.finish || 0) / total) * 100);
   return (
-    <div className="flex flex-col rounded-2xl p-5 bg-[#4A4A49] border-2 border-[#4A4A49] shadow-md relative overflow-hidden transition-all hover:shadow-lg h-full">
+    <div className="flex flex-col rounded-2xl p-5 bg-[#5c607f] border-2 border-[#858bb5] shadow-md shadow-indigo-100/60 relative overflow-hidden transition-all hover:shadow-lg h-full">
       <Activity className="absolute -right-4 -bottom-4 w-32 h-32 text-white/5 pointer-events-none" />
-      <div className="text-[12px] font-black text-[#FFD100] uppercase tracking-widest mb-1.5 z-10">W/O</div>
+      <div className="text-[12px] font-black text-[#ffef9a] uppercase tracking-widest mb-1.5 z-10">W/O</div>
       <div className="text-5xl font-black text-white mb-5 z-10">{statusData?.total || 0}</div>
       <div className="text-[14px] font-bold space-y-2.5 bg-white/10 backdrop-blur-sm p-4 rounded-xl border border-white/10 z-10 mt-auto">
         <div className="flex justify-between"><span className="text-emerald-300">SAP</span><span className="text-white font-black">{statusData?.sap || 0} <span className="text-emerald-400 text-xs">({sapPct}%)</span></span></div>
@@ -91,7 +91,7 @@ const ModernGauge = ({ value, label }: any) => {
             maxValue={3}
             segments={3}
             customSegmentStops={[-3, -1, 1, 3]}
-            segmentColors={['#FCD34D', '#4ADE80', '#F87171']}
+            segmentColors={['#fde68a', '#86efac', '#fca5a5']}
             needleColor="#1e293b"
             needleHeightRatio={0.6}
             startColor="#FCD34D"
@@ -203,11 +203,11 @@ export default function DashboardPage() {
     title: { text: '' },
     credits: { enabled: false },
     accessibility: { enabled: false },
-    plotOptions: { pie: { size: '78%', innerSize: '52%', depth: 38, dataLabels: { enabled: true, distance: 28, format: '{point.name}: {point.y} ({point.percentage:.0f}%)', style: { color: '#4A4A49', fontWeight: 'bold' } } } },
+    plotOptions: { pie: { size: '78%', innerSize: '52%', depth: 38, dataLabels: { enabled: true, distance: 28, format: '{point.name}: {point.y} ({point.percentage:.0f}%)', style: { color: '#4b5563', fontWeight: 'bold' } } } },
     series: [{ name: 'Status', data: [
-        { name: 'SAP', y: statusData?.sap || 0, color: '#22c55e' },
-        { name: 'Pending', y: statusData?.pending || 0, color: '#ef4444' },
-        { name: 'Finish', y: statusData?.finish || 0, color: '#eab308' }
+        { name: 'SAP', y: statusData?.sap || 0, color: '#86efac' },
+        { name: 'Pending', y: statusData?.pending || 0, color: '#fca5a5' },
+        { name: 'Finish', y: statusData?.finish || 0, color: '#fde68a' }
     ] }]
   };
 
@@ -234,7 +234,7 @@ export default function DashboardPage() {
     series: equipmentData.filter((e: any) => e.name !== 'All').map((e: any) => ({
         name: e.name, 
         data: e.values, 
-        color: (({'BEML': '#3b82f6', 'Conveyor': '#ef4444', 'สูบน้ำ': '#f59e0b', 'Moblie other': '#10b981', 'Mobile other': '#10b981', 'power plant': '#f97316', 'General': '#8b5cf6'} as any)[e.name] || '#94a3b8')
+        color: (({'BEML': '#93c5fd', 'Conveyor': '#fca5a5', 'สูบน้ำ': '#fcd34d', 'Moblie other': '#6ee7b7', 'Mobile other': '#6ee7b7', 'power plant': '#fdba74', 'General': '#c4b5fd'} as any)[e.name] || '#cbd5e1')
     }))
   };
 
@@ -245,7 +245,7 @@ export default function DashboardPage() {
 
   return (
     <div className="p-4 md:p-8 bg-[#e2e2e2] min-h-screen text-slate-800 font-sans">
-      <header className="flex flex-col sm:flex-row justify-between items-center mb-6 md:mb-10 bg-white p-4 md:p-6 rounded-2xl md:rounded-3xl border-b-4 border-[#FFD100] shadow-sm gap-4">
+      <header className="flex flex-col sm:flex-row justify-between items-center mb-6 md:mb-10 bg-white p-4 md:p-6 rounded-2xl md:rounded-3xl border-b-4 border-[#ffd56d] shadow-sm shadow-slate-200/70 gap-4">
         <div className="flex items-center gap-4 md:gap-6">
           <div className="flex flex-col">
             <h1 className="text-xl md:text-3xl font-black tracking-tight text-[#4A4A49] uppercase flex items-center gap-2 md:gap-3">
@@ -257,7 +257,7 @@ export default function DashboardPage() {
         </div>
         <div className="flex flex-wrap items-center justify-center gap-3">
             <img src="/picture/saksit-Photoroom.png" alt="Saksit Logo" className="h-8 md:h-10 object-contain mr-2" />
-            {isLoading && <span className="flex items-center text-[10px] md:text-xs font-black text-[#FFD100] animate-pulse mr-2 bg-yellow-50 px-2 py-1 rounded-lg uppercase">Updating...</span>}
+            {isLoading && <span className="flex items-center text-[10px] md:text-xs font-black text-[#d4a300] animate-pulse mr-2 bg-yellow-50 px-2 py-1 rounded-lg uppercase">Updating...</span>}
             <div className="flex gap-1.5 bg-slate-100 p-1 md:p-1.5 rounded-xl md:rounded-2xl border border-slate-200">
               <select className="px-2 md:px-4 py-1.5 md:py-2 rounded-lg md:rounded-xl bg-white text-xs md:text-sm font-black text-[#4A4A49] outline-none shadow-sm cursor-pointer hover:bg-slate-50 transition" value={year} onChange={handleYearChange}>
                 <option value="all">รวมทุกปี</option>
@@ -268,20 +268,20 @@ export default function DashboardPage() {
                 {THAI_MONTHS.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
               </select>
             </div>
-            <a href="/purchasing" className="px-4 md:px-6 py-2 md:py-3 bg-[#FFD100] text-[#4A4A49] rounded-xl md:rounded-2xl text-xs md:text-sm font-black hover:bg-[#ffdb33] shadow-lg shadow-yellow-200/50 transition-all active:scale-95 flex items-center gap-2">
+            <a href="/purchasing" className="px-4 md:px-6 py-2 md:py-3 bg-[#ffe08a] text-[#4A4A49] rounded-xl md:rounded-2xl text-xs md:text-sm font-black hover:bg-[#ffd56a] shadow-lg shadow-yellow-200/50 transition-all active:scale-95 flex items-center gap-2">
               จัดซื้อจัดจ้าง
             </a>
         </div>
       </header>
 
       {/* Section 1: Operation Status */}
-      <div className="bg-slate-50/80 border-b-4 border-slate-200 p-4 md:p-8 rounded-[1.5rem] md:rounded-[2rem] shadow-sm relative overflow-hidden flex flex-col mb-6 md:mb-8">
+      <div className="bg-[#e8f5ff]/95 border-b-4 border-[#b9dcff] p-4 md:p-8 rounded-[1.5rem] md:rounded-[2rem] shadow-sm shadow-sky-100/60 relative overflow-hidden flex flex-col mb-6 md:mb-8">
           <div className="flex items-center justify-between mb-6 md:mb-8">
-            <h3 className="font-black text-[#4A4A49] uppercase text-xs md:text-sm tracking-widest flex items-center gap-2">
-              <div className="w-2 h-4 md:h-6 bg-[#FFD100] rounded-full"></div>
-              <img src="/picture/Jacko-Photoroom.png" alt="Jacko Logo" className="h-6 md:h-8 object-contain mr-1" />
+            <h3 className="font-black text-[#4A4A49] uppercase text-xl md:text-3xl tracking-wide flex items-center gap-3">
+              <div className="w-3 h-7 md:h-10 bg-[#ffe08a] rounded-full"></div>
+              <img src="/picture/Jacko-Photoroom.png" alt="Jacko Logo" className="h-8 md:h-11 object-contain mr-1" />
               จำนวน W/O เข้าจากระบบ SAP
-              <img src="/picture/s-sap-erp.png" alt="SAP Logo" className="h-4 md:h-6 ml-1 md:ml-2 object-contain" />
+              <img src="/picture/s-sap-erp.png" alt="SAP Logo" className="h-6 md:h-9 ml-1 md:ml-2 object-contain" />
             </h3>
             <Info className="text-slate-300 w-4 h-4 md:w-5 h-5 cursor-help" />
           </div>
@@ -289,7 +289,7 @@ export default function DashboardPage() {
               <div className="w-full xl:max-w-[320px] xl:self-start">
                 <WOBlock statusData={statusData} />
               </div>
-              <div className="flex justify-center items-center bg-white/30 rounded-2xl p-3 md:p-4 border border-slate-100">
+              <div className="flex justify-center items-center bg-[#f5fbff]/80 rounded-2xl p-3 md:p-4 border border-[#cfe6f7]">
                 <div className="w-full max-w-[680px]">
                   <HighchartsReact highcharts={Highcharts} options={statusChartOptions} />
                 </div>
@@ -326,8 +326,8 @@ export default function DashboardPage() {
       </div>
 
       {/* Section 2: W Group Blocks */}
-      <h3 className="font-black text-[#4A4A49] uppercase text-xs md:text-sm tracking-widest flex items-center gap-2 mb-6 md:mb-8">
-        <div className="w-2 h-4 md:h-6 bg-[#8bff81] rounded-full"></div>
+      <h3 className="font-black text-[#4A4A49] uppercase text-xl md:text-3xl tracking-wide flex items-center gap-3 mb-6 md:mb-8">
+        <div className="w-3 h-7 md:h-10 bg-[#8bff81] rounded-full"></div>
         W/O เข้าตามหมวด
       </h3>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-6 md:mb-8">
@@ -341,45 +341,45 @@ export default function DashboardPage() {
         ))}
       </div>
 
-      <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm mb-6 md:mb-8 text-center">
+      <div className="bg-[#fff3cf] p-6 rounded-3xl border border-[#eecb70] shadow-sm shadow-yellow-100/50 mb-6 md:mb-8 text-center">
           <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">รวม W/O ทั้งหมด</div>
           <div className="text-6xl font-black text-slate-900">{w_all?.entrance || 0}</div>
       </div>
 
       {/* Section 3: Work by Group */}
-      <div className="bg-slate-50/80 border-b-4 border-slate-200 p-4 md:p-8 rounded-[1.5rem] md:rounded-[2rem] shadow-sm relative overflow-hidden mb-8 md:mb-10">
+      <div className="bg-[#edf3ff]/95 border-b-4 border-[#c7d7ff] p-4 md:p-8 rounded-[1.5rem] md:rounded-[2rem] shadow-sm shadow-sky-100/60 relative overflow-hidden mb-8 md:mb-10">
           <div className="flex items-center justify-between mb-6 md:mb-8">
             <h3 className="font-black text-[#4A4A49] uppercase text-xl md:text-3xl tracking-wide flex items-center gap-3">
-              <div className="w-3 h-7 md:h-10 bg-[#F37021] rounded-full"></div>
+              <div className="w-3 h-7 md:h-10 bg-[#f9a66c] rounded-full"></div>
               งานเข้าตามกลุ่มงาน
             </h3>
             <Activity className="text-slate-300 w-4 h-4 md:w-5 h-5" />
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-10 items-start">
-              <div className="flex flex-col bg-white/70 rounded-2xl p-3 md:p-5 border-2 border-slate-300 shadow-sm overflow-hidden">
+              <div className="flex flex-col bg-[#f7f4ff]/90 rounded-2xl p-3 md:p-5 border-2 border-[#b9c4e8] shadow-sm overflow-hidden">
                 <HighchartsReact highcharts={Highcharts} options={equipChartOptions} />
               </div>
               <div className="overflow-hidden rounded-2xl border-2 border-slate-100 overflow-x-auto">
-                  <table className="w-full text-center text-[10px] md:text-[11px] font-black text-slate-500 min-w-[500px] border-collapse border border-slate-200">
+                  <table className="w-full text-center text-[13px] md:text-[15px] font-black text-slate-500 min-w-[560px] border-collapse border border-slate-200">
                       <thead className="bg-slate-100/80 uppercase">
                           <tr>
-                            <th className="p-3 md:p-4 tracking-tighter border border-slate-200">Eq</th>
-                            <th className="p-3 md:p-4 tracking-tighter border border-slate-200">W11</th>
-                            <th className="p-3 md:p-4 tracking-tighter border border-slate-200">W12</th>
-                            <th className="p-3 md:p-4 tracking-tighter border border-slate-200">W13</th>
-                            <th className="p-3 md:p-4 tracking-tighter text-[9px] md:text-xs border border-slate-200">W14</th>
-                            <th className="p-3 md:p-4 text-[#4A4A49] bg-slate-200/50 border border-slate-200">รวม</th>
+                            <th className="p-3 md:p-5 tracking-normal border border-slate-200">Eq</th>
+                            <th className="p-3 md:p-5 tracking-normal border border-slate-200">W11</th>
+                            <th className="p-3 md:p-5 tracking-normal border border-slate-200">W12</th>
+                            <th className="p-3 md:p-5 tracking-normal border border-slate-200">W13</th>
+                            <th className="p-3 md:p-5 tracking-normal border border-slate-200">W14</th>
+                            <th className="p-3 md:p-5 text-[#4A4A49] bg-slate-200/50 border border-slate-200">รวม</th>
                           </tr>
                       </thead>
                       <tbody className="bg-white/50">
                           {equipmentData.map((e: any) => (
                               <tr key={e.name} className={`transition-colors ${e.name === 'All' ? 'bg-yellow-50 font-black' : 'hover:bg-slate-100'}`}>
-                                  <td className={`p-2 md:p-3 text-left font-black border border-slate-200 ${e.name === 'All' ? 'text-amber-700' : 'text-[#4A4A49]'}`}>{e.name === 'All' ? 'รวมทั้งหมด' : e.name}</td>
-                                  <td className="p-2 md:p-3 border border-slate-200">{e.values[0]}</td>
-                                  <td className="p-2 md:p-3 border border-slate-200">{e.values[1]}</td>
-                                  <td className="p-2 md:p-3 border border-slate-200">{e.values[2]}</td>
-                                  <td className="p-2 md:p-3 border border-slate-200">{e.values[3]}</td>
-                                  <td className={`p-2 md:p-3 font-black border border-slate-200 ${e.name === 'All' ? 'text-amber-700 text-sm md:text-lg' : 'text-[#4A4A49] bg-slate-100/30'}`}>{e.total}</td>
+                                  <td className={`p-3 md:p-4 text-left font-black border border-slate-200 ${e.name === 'All' ? 'text-amber-700' : 'text-[#4A4A49]'}`}>{e.name === 'All' ? 'รวมทั้งหมด' : e.name}</td>
+                                  <td className="p-3 md:p-4 border border-slate-200">{e.values[0]}</td>
+                                  <td className="p-3 md:p-4 border border-slate-200">{e.values[1]}</td>
+                                  <td className="p-3 md:p-4 border border-slate-200">{e.values[2]}</td>
+                                  <td className="p-3 md:p-4 border border-slate-200">{e.values[3]}</td>
+                                  <td className={`p-3 md:p-4 font-black border border-slate-200 ${e.name === 'All' ? 'text-amber-700 text-lg md:text-2xl' : 'text-[#4A4A49] bg-slate-100/30'}`}>{e.total}</td>
                               </tr>
                           ))}
                       </tbody>
@@ -389,8 +389,8 @@ export default function DashboardPage() {
       </div>
 
       <div className="flex items-center justify-between mb-6 md:mb-8">
-        <h3 className="font-black text-[#4A4A49] uppercase text-xs md:text-sm tracking-widest flex items-center gap-2">
-          <div className="w-2 h-4 md:h-6 bg-[#22c55e] rounded-full"></div>
+        <h3 className="font-black text-[#4A4A49] uppercase text-xl md:text-3xl tracking-wide flex items-center gap-3">
+          <div className="w-3 h-7 md:h-10 bg-[#22c55e] rounded-full"></div>
           Load Factor / Man
         </h3>
         <Activity className="text-slate-300 w-4 h-4 md:w-5 h-5" />
@@ -403,7 +403,7 @@ export default function DashboardPage() {
             { id: 'W13', color: 'pink', icon: <Shield className="w-6 h-6 text-rose-500" /> }, 
             { id: 'W14', color: 'blue', icon: <HardHat className="w-6 h-6 text-sky-500" /> }
         ].map((w) => (
-          <div key={w.id} className="bg-white rounded-[2rem] p-6 border-b-4 border-slate-200 shadow-sm hover:shadow-md transition-all relative overflow-hidden group">
+          <div key={w.id} className="bg-[#fff8e8] rounded-[2rem] p-6 border-b-4 border-[#cde9d8] shadow-sm hover:shadow-md transition-all relative overflow-hidden group">
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
                 <div className="p-3 bg-slate-50 rounded-2xl group-hover:scale-110 transition-transform">
