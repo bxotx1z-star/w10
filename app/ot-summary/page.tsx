@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import { ArrowLeft, ChevronDown, Clock, Filter, RefreshCw, ShoppingCart } from 'lucide-react';
+import React, { useCallback, useEffect, useState } from 'react';
+import Link from 'next/link';
+import { ArrowLeft, Check, ChevronDown, Clock, Filter, RefreshCw, ShoppingCart } from 'lucide-react';
 
 type EmployeeOtRow = {
   sequence: number;
@@ -18,11 +19,22 @@ type EmployeeOtRow = {
   threeTime?: number;
 };
 
+type OtErrorRow = {
+  sequence: number;
+  employeeId: string;
+  name: string;
+  position: string;
+  days: boolean[];
+  total: number;
+};
+
 type OtSummaryData = {
   employeeTitle?: string;
   contractorTitle?: string;
   employees?: EmployeeOtRow[];
   contractors?: EmployeeOtRow[];
+  employeeErrors?: OtErrorRow[];
+  contractorErrors?: OtErrorRow[];
   error?: string;
 };
 
@@ -37,13 +49,223 @@ const contractorTailHeaderClasses = [
   'bg-white text-[#dc2626]',
 ];
 
+const otGroups = ['W11', 'W12', 'W13', 'W14'];
+
+const emptyEmployeeTotals = {
+  total: 0,
+  total2: 0,
+};
+
+const emptyContractorTotals = {
+  holidayHours: 0,
+  total: 0,
+  oneTime: 0,
+  oneHalfTime: 0,
+  total2: 0,
+  threeTime: 0,
+};
+
+const getEmployeeTotals = (rows: EmployeeOtRow[]) => rows.reduce(
+  (sum, employee) => ({
+    total: sum.total + employee.total,
+    total2: sum.total2 + employee.total2,
+  }),
+  { ...emptyEmployeeTotals },
+);
+
+const getContractorTotals = (rows: EmployeeOtRow[]) => rows.reduce(
+  (sum, contractor) => ({
+    holidayHours: sum.holidayHours + (contractor.holidayHours || 0),
+    total: sum.total + contractor.total,
+    oneTime: sum.oneTime + (contractor.oneTime || 0),
+    oneHalfTime: sum.oneHalfTime + (contractor.oneHalfTime || 0),
+    total2: sum.total2 + contractor.total2,
+    threeTime: sum.threeTime + (contractor.threeTime || 0),
+  }),
+  { ...emptyContractorTotals },
+);
+
+const renderEmployeeTable = (rows: EmployeeOtRow[], group: string) => {
+  const isAll = group === 'ALL-EMPLOYEES';
+  return (
+    <div className="overflow-x-auto">
+      <table className={`w-full ${isAll ? 'min-w-[1400px]' : 'min-w-[800px] xl:min-w-0'} table-fixed border-collapse border border-[#21324a] text-center text-[10px] md:text-[11px]`}>
+        <colgroup>
+          <col className="w-[30px]" />
+          <col className="w-[55px]" />
+          <col className="w-[125px]" />
+          <col className="w-[38px]" />
+          {Array.from({ length: 31 }, (_, index) => (
+            <col key={`${group}-employee-day-col-${index}`} className="w-[17px] md:w-[18px]" />
+          ))}
+          <col className="w-[34px]" />
+          <col className="w-[42px]" />
+        </colgroup>
+        <thead className="text-[9px] md:text-[10px] font-black text-slate-900">
+          <tr>
+            <th colSpan={4} className="border border-slate-700 bg-white px-1 py-1 font-black">
+              <div className="text-[11px] md:text-[12px]">มิถุนายน 2569</div>
+              <div className="text-[9px] md:text-[10px]">กบย-ช., หสบ-ช. (ล่วงเวลา 30 , 45 ชั่วโมง)</div>
+            </th>
+            <th colSpan={31} className="border border-slate-700 bg-white px-1 py-1 font-black text-[11px] md:text-[12px]">วันที่</th>
+            <th colSpan={2} className="border border-slate-700 bg-white px-1 py-1 font-black"></th>
+          </tr>
+          <tr>
+            {['ลำดับ', 'เลขประจำตัว', 'ชื่อ', 'ตำแหน่ง', ...Array.from({ length: 31 }, (_, index) => `${index + 1}`), 'รวม', 'รวมx3'].map((header, index) => (
+              <th key={`${group}-${header}`} className={`border border-slate-700 bg-[#d9d9d9] px-0.5 py-1 font-black whitespace-nowrap ${index >= 35 ? 'bg-[#ffd119] text-[#061b3d]' : ''}`}>{header}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((employee, index) => (
+            <tr key={`${group}-${employee.employeeId}-${employee.sequence}-${index}`} className={index % 2 === 0 ? 'bg-white' : 'bg-[#e4f5ed]'}>
+              <td className="border border-slate-700 px-0.5 py-1 font-bold">{employee.sequence}</td>
+              <td className="border border-slate-700 px-0.5 py-1 font-bold">{employee.employeeId}</td>
+              <td className="truncate border border-slate-700 px-1 py-1 text-left font-bold whitespace-nowrap" title={employee.name}>{employee.name}</td>
+              <td className="border border-slate-700 px-0.5 py-1 font-bold">{employee.position}</td>
+              {employee.days.map((value, dayIndex) => (
+                <td key={`${group}-${employee.employeeId}-${dayIndex}`} className="border border-slate-700 px-0.5 py-1 font-bold">
+                  {value ? formatNumber(value) : '-'}
+                </td>
+              ))}
+              <td className="border border-slate-700 bg-[#ffd119] px-0.5 py-1 font-black text-[#4A4A49]">{formatNumber(employee.total)}</td>
+              <td className="border border-slate-700 bg-[#ffd119] px-0.5 py-1 font-black text-[#4A4A49]">{formatNumber(employee.total2)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+};
+
+const renderContractorTable = (rows: EmployeeOtRow[], totals: typeof emptyContractorTotals, group: string) => (
+  <div className="overflow-x-auto">
+    <table className="w-full min-w-[1360px] table-fixed border-collapse border border-[#21324a] text-center text-[11px]">
+      <colgroup>
+        <col className="w-[42px]" />
+        <col className="w-[48px]" />
+        <col className="w-[160px]" />
+        {Array.from({ length: 31 }, (_, index) => (
+          <col key={`${group}-contractor-day-col-${index}`} className="w-[24px]" />
+        ))}
+        {Array.from({ length: 6 }, (_, index) => (
+          <col key={`${group}-contractor-total-col-${index}`} className={index === 4 ? 'w-[70px]' : 'w-[54px]'} />
+        ))}
+      </colgroup>
+      <thead className="text-[10px] font-black text-slate-900">
+        <tr>
+          <th colSpan={3} className="border border-slate-700 bg-white px-1 py-1 font-black">ล่วงเวลาลูกจ้าง มิถุนายน 2569</th>
+          <th colSpan={31} className="border border-slate-700 bg-white px-1 py-1 font-black">วันที่</th>
+          <th colSpan={2} className="border border-slate-700 bg-white px-1 py-1 font-black"></th>
+          <th className="border border-slate-700 bg-white px-1 py-1 font-black text-[#dc2626]">1เท่า</th>
+          <th className="border border-slate-700 bg-[#fff3c4] px-1 py-1 font-black text-[#d7c900]">1.5เท่า</th>
+          <th className="border border-slate-700 bg-white px-1 py-1 font-black text-[#00a6c8]">ยอดจ่าย</th>
+          <th className="border border-slate-700 bg-white px-1 py-1 font-black text-[#dc2626]">3เท่า</th>
+        </tr>
+        <tr>
+          {['ลำดับ', 'หมวด', 'ชื่อ', ...Array.from({ length: 31 }, (_, index) => `${index + 1}`), 'ชม.วันหยุด', 'รวมชม1.5', '61.63', '92.44', 'รวมเงิน', '184.89'].map((header, index) => (
+            <th key={`${group}-${header}`} className={`border border-slate-700 bg-[#d9d9d9] px-0.5 py-1 font-black leading-tight ${index === 2 ? 'text-left' : ''} ${index >= 34 ? contractorTailHeaderClasses[index - 34] : ''}`}>{header}</th>
+          ))}
+        </tr>
+      </thead>
+      <tbody>
+        {rows.map((contractor, index) => (
+          <tr key={`${group}-${contractor.sequence}-${contractor.name}-${index}`} className={index % 2 === 0 ? 'bg-white' : 'bg-[#fce7f3]'}>
+            <td className="border border-slate-700 px-0.5 py-1 font-bold">{contractor.sequence}</td>
+            <td className="border border-slate-700 px-0.5 py-1 font-black text-[#4A4A49]">{contractor.group}</td>
+            <td className="truncate border border-slate-700 px-1 py-1 text-left font-bold" title={contractor.name}>{contractor.name}</td>
+            {contractor.days.map((value, dayIndex) => (
+              <td key={`${group}-${contractor.sequence}-${dayIndex}`} className="border border-slate-700 px-0.5 py-1 font-bold">
+                {value ? formatNumber(value) : '-'}
+              </td>
+            ))}
+            <td className="border border-slate-700 bg-[#ffd6d6] px-0.5 py-1 font-black text-[#4A4A49]">{formatNumber(contractor.holidayHours || 0)}</td>
+            <td className="border border-slate-700 bg-[#fff3c4] px-0.5 py-1 font-black text-[#4A4A49]">{formatNumber(contractor.total)}</td>
+            <td className="border border-slate-700 bg-[#ffd6d6] px-0.5 py-1 font-black text-[#4A4A49]">{formatNumber(contractor.oneTime || 0)}</td>
+            <td className="border border-slate-700 bg-[#fff3c4] px-0.5 py-1 font-black text-[#4A4A49]">{formatNumber(contractor.oneHalfTime || 0)}</td>
+            <td className="border border-slate-700 bg-[#31f4ff] px-0.5 py-1 font-black text-[#004851]">{formatNumber(contractor.total2)}</td>
+            <td className="border border-slate-700 bg-[#f1ddc9] px-0.5 py-1 font-black text-[#4A4A49]">{formatNumber(contractor.threeTime || 0)}</td>
+          </tr>
+        ))}
+        <tr className="bg-[#e4f5ed]">
+          <td colSpan={34} className="border border-slate-700 px-2 py-2 text-right font-black text-[#061b3d]">ยอดรวมสุทธิ</td>
+          <td className="border border-slate-700 bg-[#ffd6d6] px-0.5 py-2 font-black text-[#4A4A49]">{formatNumber(totals.holidayHours)}</td>
+          <td className="border border-slate-700 bg-[#fff3c4] px-0.5 py-2 font-black text-[#4A4A49]">{formatNumber(totals.total)}</td>
+          <td className="border border-slate-700 bg-[#ffd6d6] px-0.5 py-2 font-black text-[#4A4A49]">{formatNumber(totals.oneTime)}</td>
+          <td className="border border-slate-700 bg-[#fff3c4] px-0.5 py-2 font-black text-[#4A4A49]">{formatNumber(totals.oneHalfTime)}</td>
+          <td className="border border-slate-700 bg-[#31f4ff] px-0.5 py-2 font-black text-[#004851]">{formatNumber(totals.total2)}</td>
+          <td className="border border-slate-700 bg-[#f1ddc9] px-0.5 py-2 font-black text-[#4A4A49]">{formatNumber(totals.threeTime)}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+);
+
+const renderOtErrorTable = (rows: OtErrorRow[], type: 'employee' | 'contractor') => {
+  const isEmployee = type === 'employee';
+  return (
+    <div className="overflow-x-auto mt-4">
+      <table className="w-full min-w-[800px] table-fixed border-collapse border border-[#21324a] text-center text-[10px] md:text-[11px]">
+        <colgroup>
+          <col className="w-[30px]" />
+          <col className={isEmployee ? 'w-[55px]' : 'w-[65px]'} />
+          <col className="w-[125px]" />
+          {isEmployee && <col className="w-[38px]" />}
+          {Array.from({ length: 31 }, (_, index) => (
+            <col key={`error-day-col-${index}`} className="w-[17px] md:w-[18px]" />
+          ))}
+          <col className="w-[34px]" />
+        </colgroup>
+        <thead className="text-[9px] md:text-[10px] font-black text-slate-900">
+          <tr className="bg-red-500 text-white">
+            <th colSpan={isEmployee ? 36 : 35} className="border border-slate-700 px-1 py-1 font-black text-sm uppercase tracking-wider">
+              Check OT Error {isEmployee ? 'พนักงาน' : 'ลูกจ้าง'}
+            </th>
+          </tr>
+          <tr>
+            {['ลำดับ', isEmployee ? 'เลขประจำตัว' : 'หมวด', 'ชื่อ', ...(isEmployee ? ['ตำแหน่ง'] : []), ...Array.from({ length: 31 }, (_, index) => `${index + 1}`), 'รวม'].map((header, index) => (
+              <th key={`error-header-${header}-${index}`} className="border border-slate-700 bg-[#d9d9d9] px-0.5 py-1 font-black whitespace-nowrap">{header}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row, index) => (
+            <tr key={`error-row-${row.sequence}-${index}`} className={index % 2 === 0 ? 'bg-white' : 'bg-[#fff5f5]'}>
+              <td className="border border-slate-700 px-0.5 py-1 font-bold">{row.sequence}</td>
+              <td className="border border-slate-700 px-0.5 py-1 font-bold">{isEmployee ? row.employeeId : row.employeeId /* Actually category for contractor */}</td>
+              <td className="truncate border border-slate-700 px-1 py-1 text-left font-bold whitespace-nowrap" title={row.name}>{row.name}</td>
+              {isEmployee && <td className="border border-slate-700 px-0.5 py-1 font-bold">{row.position}</td>}
+              {row.days.map((isError, dayIndex) => (
+                <td 
+                  key={`error-day-${row.sequence}-${dayIndex}`} 
+                  className={`border border-slate-700 px-0.5 py-1 font-bold ${isError ? 'bg-[#dcfce7]' : 'bg-[#ff0000]'}`}
+                >
+                  {isError ? (
+                    <div className="flex items-center justify-center">
+                      <Check size={14} className="text-[#16a34a]" strokeWidth={5} />
+                    </div>
+                  ) : (
+                    <div className="h-3.5" /> // Empty space for red cells
+                  )}
+                </td>
+              ))}
+              <td className="border border-slate-700 bg-yellow-400 px-0.5 py-1 font-black text-[#4A4A49]">{row.total}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+};
+
+
 export default function OtSummaryPage() {
   const [data, setData] = useState<OtSummaryData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
   const [menuOpen, setMenuOpen] = useState(false);
 
-  const loadData = () => {
+  const loadData = useCallback(() => {
     setIsLoading(true);
     setError('');
     fetch('/api/ot-summary', { cache: 'no-store' })
@@ -54,28 +276,43 @@ export default function OtSummaryPage() {
       })
       .catch((err: Error) => setError(err.message))
       .finally(() => setIsLoading(false));
-  };
+  }, []);
 
   useEffect(() => {
-    loadData();
-  }, []);
+    void Promise.resolve().then(loadData);
+  }, [loadData]);
 
   const handleRefresh = () => {
     loadData();
   };
 
+  const employees = data?.employees || [];
   const contractors = data?.contractors || [];
-  const contractorTotals = contractors.reduce(
-    (sum, contractor) => ({
-      holidayHours: sum.holidayHours + (contractor.holidayHours || 0),
-      total: sum.total + contractor.total,
-      oneTime: sum.oneTime + (contractor.oneTime || 0),
-      oneHalfTime: sum.oneHalfTime + (contractor.oneHalfTime || 0),
-      total2: sum.total2 + contractor.total2,
-      threeTime: sum.threeTime + (contractor.threeTime || 0),
-    }),
-    { holidayHours: 0, total: 0, oneTime: 0, oneHalfTime: 0, total2: 0, threeTime: 0 },
-  );
+  const employeeErrors = data?.employeeErrors || [];
+  const contractorErrors = data?.contractorErrors || [];
+  const allContractorTotals = getContractorTotals(contractors);
+  const employeeSections = otGroups.map((group) => {
+    const rows = employees.filter((employee) => employee.group === group);
+    const totals = getEmployeeTotals(rows);
+
+    return {
+      group,
+      rows,
+      totals,
+      averageOt: rows.length ? totals.total / rows.length : 0,
+    };
+  });
+  const contractorSections = otGroups.map((group) => {
+    const rows = contractors.filter((contractor) => contractor.group === group);
+    const totals = getContractorTotals(rows);
+
+    return {
+      group,
+      rows,
+      totals,
+      averageOt: rows.length ? totals.total / rows.length : 0,
+    };
+  });
 
   return (
     <div className="min-h-screen bg-[#dedede] p-4 text-slate-900 md:p-8 font-sans">
@@ -116,15 +353,15 @@ export default function OtSummaryPage() {
             </button>
             {menuOpen && (
               <div className="absolute right-0 top-full z-20 mt-2 w-64 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl shadow-slate-300/40">
-                <a href="/" className="flex items-center gap-3 px-4 py-3 text-sm font-black text-[#4A4A49] hover:bg-slate-50">
+                <Link href="/" className="flex items-center gap-3 px-4 py-3 text-sm font-black text-[#4A4A49] hover:bg-slate-50">
                   <ArrowLeft size={18} className="text-slate-500" /> หน้าหลัก
-                </a>
-                <a href="/purchasing" className="flex items-center gap-3 border-t border-slate-100 px-4 py-3 text-sm font-black text-[#4A4A49] hover:bg-yellow-50">
+                </Link>
+                <Link href="/purchasing" className="flex items-center gap-3 border-t border-slate-100 px-4 py-3 text-sm font-black text-[#4A4A49] hover:bg-yellow-50">
                   <ShoppingCart size={18} className="text-[#d4a300]" /> จัดซื้อจัดจ้าง
-                </a>
-                <a href="/ot-summary" className="flex items-center gap-3 border-t border-slate-100 px-4 py-3 text-sm font-black text-[#4A4A49] hover:bg-sky-50">
+                </Link>
+                <Link href="/ot-summary" className="flex items-center gap-3 border-t border-slate-100 px-4 py-3 text-sm font-black text-[#4A4A49] hover:bg-sky-50">
                   <Clock size={18} className="text-sky-500" /> สรุปโอทีลูกจ้างและพนักงาน
-                </a>
+                </Link>
               </div>
             )}
           </div>
@@ -139,121 +376,124 @@ export default function OtSummaryPage() {
         </div>
       ) : (
         <>
-          <section className="overflow-hidden rounded-3xl border border-[#efd58d] border-b-[5px] border-b-[#eecb70] bg-[#fff8da] shadow-[0_8px_18px_rgba(234,179,8,0.12)]">
-            <div className="border-b border-[#efd58d] bg-[#fffdf1] p-4 md:p-8">
-              <h2 className="flex items-center gap-3 text-2xl font-black text-[#061b3d] md:text-4xl">
-                <div className="h-8 w-3 rounded-full bg-[#f9a66c] md:h-11"></div>
-                รายละเอียด OT พนักงาน
-              </h2>
-              <p className="mt-2 text-sm font-extrabold text-slate-600">{data.employeeTitle || 'สรุป OT พนักงาน'} · B2:AL20</p>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[1640px] border-collapse border border-[#21324a] text-center text-[13px]">
-                <thead className="text-[12px] font-black text-slate-900">
-                  <tr>
-                    <th colSpan={4} className="border border-slate-700 bg-white px-2 py-2 font-black">
-                      <div>มิถุนายน 2569</div>
-                      <div>กบย-ช., หสบ-ช. (ล่วงเวลา 30 , 45 ชั่วโมง)</div>
-                    </th>
-                    <th colSpan={31} className="border border-slate-700 bg-white px-2 py-2 font-black">วันที่</th>
-                    <th colSpan={2} className="border border-slate-700 bg-white px-2 py-2 font-black"></th>
-                  </tr>
-                  <tr>
-                    {['ลำดับ', 'เลขประจำตัว', 'ชื่อ', 'ตำแหน่ง', ...Array.from({ length: 31 }, (_, index) => `${index + 1}`), 'รวม', 'รวมx3'].map((header, index) => (
-                      <th key={header} className={`border border-slate-700 bg-[#d9d9d9] px-2 py-2 font-black whitespace-nowrap ${index >= 35 ? 'bg-[#ffd119] text-[#061b3d]' : ''}`}>{header}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {(data.employees || []).map((employee, index) => (
-                    <tr key={`${employee.employeeId}-${employee.sequence}`} className={index % 2 === 0 ? 'bg-white' : 'bg-[#e4f5ed]'}>
-                      <td className="border border-slate-700 px-2 py-2 font-bold">{employee.sequence}</td>
-                      <td className="border border-slate-700 px-2 py-2 font-bold">{employee.employeeId}</td>
-                      <td className="border border-slate-700 px-3 py-2 text-left font-bold whitespace-nowrap">{employee.name}</td>
-                      <td className="border border-slate-700 px-2 py-2 font-bold">{employee.position}</td>
-                      {employee.days.map((value, dayIndex) => (
-                        <td key={`${employee.employeeId}-${dayIndex}`} className="border border-slate-700 px-2 py-2 font-bold">
-                          {value ? formatNumber(value) : '-'}
-                        </td>
-                      ))}
-                      <td className="border border-slate-700 bg-[#ffd119] px-2 py-2 font-black text-[#4A4A49]">{formatNumber(employee.total)}</td>
-                      <td className="border border-slate-700 bg-[#ffd119] px-2 py-2 font-black text-[#4A4A49]">{formatNumber(employee.total2)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </section>
+          <div className="flex flex-col gap-8">
+            {contractorSections.map(({ group, rows, totals, averageOt }) => (
+              <section key={group} className="overflow-hidden rounded-3xl border border-[#f4bfd2] border-b-[5px] border-b-[#f1a9c4] bg-[#fff0f6] shadow-[0_8px_18px_rgba(244,114,182,0.12)]">
+                <div className="border-b border-[#f4bfd2] bg-[#fff8fb] p-4 md:p-8">
+                  <h2 className="flex items-center gap-3 text-2xl font-black text-[#061b3d] md:text-4xl">
+                    <div className="h-8 w-3 rounded-full bg-[#f9a8d4] md:h-11"></div>
+                    รายละเอียด OT ลูกจ้าง {group}
+                  </h2>
+                  <p className="mt-2 text-sm font-extrabold text-slate-600">{data.contractorTitle || 'สรุป OT ลูกจ้าง'} · B2:AO34</p>
+                </div>
 
-          <section className="mt-8 overflow-hidden rounded-3xl border border-[#f4bfd2] border-b-[5px] border-b-[#f1a9c4] bg-[#fff0f6] shadow-[0_8px_18px_rgba(244,114,182,0.12)]">
-            <div className="border-b border-[#f4bfd2] bg-[#fff8fb] p-4 md:p-8">
-              <h2 className="flex items-center gap-3 text-2xl font-black text-[#061b3d] md:text-4xl">
-                <div className="h-8 w-3 rounded-full bg-[#f9a8d4] md:h-11"></div>
-                รายละเอียด OT ลูกจ้าง
-              </h2>
-              <p className="mt-2 text-sm font-extrabold text-slate-600">{data.contractorTitle || 'สรุป OT ลูกจ้าง'} · B2:AO34</p>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[1360px] table-fixed border-collapse border border-[#21324a] text-center text-[11px]">
-                <colgroup>
-                  <col className="w-[42px]" />
-                  <col className="w-[48px]" />
-                  <col className="w-[160px]" />
-                  {Array.from({ length: 31 }, (_, index) => (
-                    <col key={`contractor-day-col-${index}`} className="w-[24px]" />
-                  ))}
-                  {Array.from({ length: 6 }, (_, index) => (
-                    <col key={`contractor-total-col-${index}`} className={index === 4 ? 'w-[70px]' : 'w-[54px]'} />
-                  ))}
-                </colgroup>
-                <thead className="text-[10px] font-black text-slate-900">
-                  <tr>
-                    <th colSpan={3} className="border border-slate-700 bg-white px-1 py-1 font-black">ล่วงเวลาลูกจ้าง มิถุนายน 2569</th>
-                    <th colSpan={31} className="border border-slate-700 bg-white px-1 py-1 font-black">วันที่</th>
-                    <th colSpan={2} className="border border-slate-700 bg-white px-1 py-1 font-black"></th>
-                    <th className="border border-slate-700 bg-white px-1 py-1 font-black text-[#dc2626]">1เท่า</th>
-                    <th className="border border-slate-700 bg-[#fff3c4] px-1 py-1 font-black text-[#d7c900]">1.5เท่า</th>
-                    <th className="border border-slate-700 bg-white px-1 py-1 font-black text-[#00a6c8]">ยอดจ่าย</th>
-                    <th className="border border-slate-700 bg-white px-1 py-1 font-black text-[#dc2626]">3เท่า</th>
-                  </tr>
-                  <tr>
-                    {['ลำดับ', 'หมวด', 'ชื่อ', ...Array.from({ length: 31 }, (_, index) => `${index + 1}`), 'ชม.วันหยุด', 'รวมชม1.5', '61.63', '92.44', 'รวมเงิน', '184.89'].map((header, index) => (
-                      <th key={header} className={`border border-slate-700 bg-[#d9d9d9] px-0.5 py-1 font-black leading-tight ${index === 2 ? 'text-left' : ''} ${index >= 34 ? contractorTailHeaderClasses[index - 34] : ''}`}>{header}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {contractors.map((contractor, index) => (
-                    <tr key={`${contractor.group}-${contractor.sequence}-${contractor.name}`} className={index % 2 === 0 ? 'bg-white' : 'bg-[#fce7f3]'}>
-                      <td className="border border-slate-700 px-0.5 py-1 font-bold">{contractor.sequence}</td>
-                      <td className="border border-slate-700 px-0.5 py-1 font-black text-[#4A4A49]">{contractor.group}</td>
-                      <td className="truncate border border-slate-700 px-1 py-1 text-left font-bold" title={contractor.name}>{contractor.name}</td>
-                      {contractor.days.map((value, dayIndex) => (
-                        <td key={`${contractor.group}-${contractor.sequence}-${dayIndex}`} className="border border-slate-700 px-0.5 py-1 font-bold">
-                          {value ? formatNumber(value) : '-'}
-                        </td>
-                      ))}
-                      <td className="border border-slate-700 bg-[#ffd6d6] px-0.5 py-1 font-black text-[#4A4A49]">{formatNumber(contractor.holidayHours || 0)}</td>
-                      <td className="border border-slate-700 bg-[#fff3c4] px-0.5 py-1 font-black text-[#4A4A49]">{formatNumber(contractor.total)}</td>
-                      <td className="border border-slate-700 bg-[#ffd6d6] px-0.5 py-1 font-black text-[#4A4A49]">{formatNumber(contractor.oneTime || 0)}</td>
-                      <td className="border border-slate-700 bg-[#fff3c4] px-0.5 py-1 font-black text-[#4A4A49]">{formatNumber(contractor.oneHalfTime || 0)}</td>
-                      <td className="border border-slate-700 bg-[#31f4ff] px-0.5 py-1 font-black text-[#004851]">{formatNumber(contractor.total2)}</td>
-                      <td className="border border-slate-700 bg-[#f1ddc9] px-0.5 py-1 font-black text-[#4A4A49]">{formatNumber(contractor.threeTime || 0)}</td>
-                    </tr>
-                  ))}
-                  <tr className="bg-[#e4f5ed]">
-                    <td colSpan={34} className="border border-slate-700 px-2 py-2 text-right font-black text-[#061b3d]">ยอดรวมสุทธิ</td>
-                    <td className="border border-slate-700 bg-[#ffd6d6] px-0.5 py-2 font-black text-[#4A4A49]">{formatNumber(contractorTotals.holidayHours)}</td>
-                    <td className="border border-slate-700 bg-[#fff3c4] px-0.5 py-2 font-black text-[#4A4A49]">{formatNumber(contractorTotals.total)}</td>
-                    <td className="border border-slate-700 bg-[#ffd6d6] px-0.5 py-2 font-black text-[#4A4A49]">{formatNumber(contractorTotals.oneTime)}</td>
-                    <td className="border border-slate-700 bg-[#fff3c4] px-0.5 py-2 font-black text-[#4A4A49]">{formatNumber(contractorTotals.oneHalfTime)}</td>
-                    <td className="border border-slate-700 bg-[#31f4ff] px-0.5 py-2 font-black text-[#004851]">{formatNumber(contractorTotals.total2)}</td>
-                    <td className="border border-slate-700 bg-[#f1ddc9] px-0.5 py-2 font-black text-[#4A4A49]">{formatNumber(contractorTotals.threeTime)}</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </section>
+                <div className="grid gap-5 p-4 md:grid-cols-[20%_80%] md:p-6 xl:grid-cols-[20%_80%]">
+                  <aside className="rounded-2xl border border-[#f4bfd2] bg-white p-5 shadow-sm md:p-6">
+                    <p className="text-sm font-black text-[#f472b6]">หมวด</p>
+                    <h3 className="mt-1 text-4xl font-black text-[#061b3d]">{group}</h3>
+
+                    <dl className="mt-6 grid gap-3 text-base font-extrabold text-[#334155]">
+                      <div className="flex items-center justify-between gap-4 rounded-xl bg-[#fff0f6] px-4 py-3">
+                        <dt>จำนวนคน</dt>
+                        <dd className="text-xl font-black text-[#061b3d]">{formatNumber(rows.length)} คน</dd>
+                      </div>
+                      <div className="flex items-center justify-between gap-4 rounded-xl bg-[#fff8da] px-4 py-3">
+                        <dt>ชม.วันหยุด</dt>
+                        <dd className="text-xl font-black text-[#061b3d]">{formatNumber(totals.holidayHours)} ชั่วโมง</dd>
+                      </div>
+                      <div className="flex items-center justify-between gap-4 rounded-xl bg-[#e8f5ff] px-4 py-3">
+                        <dt>ชม.วันปกติ</dt>
+                        <dd className="text-xl font-black text-[#061b3d]">{formatNumber(totals.total)} ชั่วโมง</dd>
+                      </div>
+                    </dl>
+                  </aside>
+
+                  <div className="min-w-0">
+                    {renderContractorTable(rows, totals, group)}
+                  </div>
+                </div>
+              </section>
+            ))}
+            <section className="overflow-hidden rounded-3xl border border-[#f4bfd2] border-b-[5px] border-b-[#f1a9c4] bg-[#fff0f6] shadow-[0_8px_18px_rgba(244,114,182,0.12)]">
+              <div className="border-b border-[#f4bfd2] bg-[#fff8fb] p-4 md:p-8">
+                <h2 className="flex items-center gap-3 text-2xl font-black text-[#061b3d] md:text-4xl">
+                  <div className="h-8 w-3 rounded-full bg-[#f9a8d4] md:h-11"></div>
+                  รายละเอียด OT ลูกจ้าง รวมทั้งหมด
+                </h2>
+                <p className="mt-2 text-sm font-extrabold text-slate-600">{data.contractorTitle || 'สรุป OT ลูกจ้าง'} · ตารางรวมหลัง W14</p>
+              </div>
+              <div className="p-4 md:p-8">
+                {renderContractorTable(contractors, allContractorTotals, 'ALL-CONTRACTORS')}
+                {contractorErrors.length > 0 && (
+                  <div className="mt-10">
+                    <h3 className="text-xl font-black text-red-600 mb-4 flex items-center gap-2">
+                      <div className="w-2 h-6 bg-red-500 rounded-full"></div>
+                      ตรวจสอบข้อผิดพลาด OT ลูกจ้าง
+                    </h3>
+                    {renderOtErrorTable(contractorErrors, 'contractor')}
+                  </div>
+                )}
+              </div>
+            </section>
+          </div>
+
+          <div className="mt-8 flex flex-col gap-8">
+            {employeeSections.map(({ group, rows, totals, averageOt }) => (
+              <section key={group} className="overflow-hidden rounded-3xl border border-[#efd58d] border-b-[5px] border-b-[#eecb70] bg-[#fff8da] shadow-[0_8px_18px_rgba(234,179,8,0.12)]">
+                <div className="border-b border-[#efd58d] bg-[#fffdf1] p-4 md:p-8">
+                  <h2 className="flex items-center gap-3 text-2xl font-black text-[#061b3d] md:text-4xl">
+                    <div className="h-8 w-3 rounded-full bg-[#f9a66c] md:h-11"></div>
+                    รายละเอียด OT พนักงาน {group}
+                  </h2>
+                  <p className="mt-2 text-sm font-extrabold text-slate-600">{data.employeeTitle || 'สรุป OT พนักงาน'} · B2:AL20</p>
+                </div>
+
+                <div className="grid gap-5 p-4 md:grid-cols-[20%_80%] md:p-6 xl:grid-cols-[20%_80%]">
+                  <aside className="rounded-2xl border border-[#efd58d] bg-white p-5 shadow-sm md:p-6">
+                    <p className="text-sm font-black text-[#d4a300]">หมวด</p>
+                    <h3 className="mt-1 text-4xl font-black text-[#061b3d]">{group}</h3>
+
+                    <dl className="mt-6 grid gap-3 text-base font-extrabold text-[#334155]">
+                      <div className="flex items-center justify-between gap-4 rounded-xl bg-[#fff8da] px-4 py-3">
+                        <dt>จำนวนคน</dt>
+                        <dd className="text-xl font-black text-[#061b3d]">{formatNumber(rows.length)} คน</dd>
+                      </div>
+                      <div className="flex items-center justify-between gap-4 rounded-xl bg-[#fff0f6] px-4 py-3">
+                        <dt>OT รวม</dt>
+                        <dd className="text-xl font-black text-[#061b3d]">{formatNumber(totals.total)} ชั่วโมง</dd>
+                      </div>
+                    </dl>
+                  </aside>
+
+                  <div className="min-w-0">
+                    {renderEmployeeTable(rows, group)}
+                  </div>
+                </div>
+              </section>
+            ))}
+            <section className="overflow-hidden rounded-3xl border border-[#efd58d] border-b-[5px] border-b-[#eecb70] bg-[#fff8da] shadow-[0_8px_18px_rgba(234,179,8,0.12)]">
+              <div className="border-b border-[#efd58d] bg-[#fffdf1] p-4 md:p-8">
+                <h2 className="flex items-center gap-3 text-2xl font-black text-[#061b3d] md:text-4xl">
+                  <div className="h-8 w-3 rounded-full bg-[#f9a66c] md:h-11"></div>
+                  รายละเอียด OT พนักงาน รวมทั้งหมด
+                </h2>
+                <p className="mt-2 text-sm font-extrabold text-slate-600">{data.employeeTitle || 'สรุป OT พนักงาน'} · ตารางรวมหลัง W14</p>
+              </div>
+              <div className="p-4 md:p-8">
+                {renderEmployeeTable(employees, 'ALL-EMPLOYEES')}
+                {employeeErrors.length > 0 && (
+                  <div className="mt-10">
+                    <h3 className="text-xl font-black text-red-600 mb-4 flex items-center gap-2">
+                      <div className="w-2 h-6 bg-red-500 rounded-full"></div>
+                      ตรวจสอบข้อผิดพลาด OT พนักงาน
+                    </h3>
+                    {renderOtErrorTable(employeeErrors, 'employee')}
+                  </div>
+                )}
+              </div>
+            </section>
+          </div>
+
         </>
       )}
     </div>

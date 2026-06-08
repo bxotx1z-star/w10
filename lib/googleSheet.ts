@@ -1,5 +1,9 @@
 import { google } from 'googleapis';
 
+function getErrorMessage(error: unknown) {
+  return error instanceof Error ? error.message : String(error);
+}
+
 function getSheetsClient() {
   const clientEmail = process.env.GOOGLE_CLIENT_EMAIL;
   const privateKey = process.env.GOOGLE_PRIVATE_KEY;
@@ -87,8 +91,8 @@ export async function updateDashboardFilters(year: string, month: string) {
       },
     });
     return true;
-  } catch (error: any) {
-    console.error('Google Sheets Update error:', error.message);
+  } catch (error: unknown) {
+    console.error('Google Sheets Update error:', getErrorMessage(error));
     return false;
   } 
 }
@@ -120,9 +124,9 @@ export async function getDashboardData() {
       info: infoRes.data.values || [],
     };
 
-  } catch (error: any) {
+  } catch (error: unknown) {
 
-    console.error('Google Sheets API error:', error.message);
+    console.error('Google Sheets API error:', getErrorMessage(error));
 
     return null;
   }
@@ -145,13 +149,60 @@ export async function getEmployeeOtSheetData() {
     });
 
     return response.data.values || [];
-  } catch (error: any) {
-    console.error('Google Sheets OT API error:', error.message);
+  } catch (error: unknown) {
+    console.error('Google Sheets OT API error:', getErrorMessage(error));
     return null;
   }
 }
 
 export async function getContractorOtSheetData() {
+  const sheetId = process.env.GOOGLE_OT_CONTRACTOR_SHEET_ID;
+  if (!sheetId) {
+    console.error('Missing GOOGLE_OT_CONTRACTOR_SHEET_ID');
+    return null;
+  }
+
+  const tabName = 'สรุปOT';
+  const client = getSheetsClientForSheet(sheetId);
+  if (!client) return null;
+
+  try {
+    const response = await client.sheets.spreadsheets.values.get({
+      spreadsheetId: client.sheetId,
+      range: `'${tabName}'!B2:AO100`,
+    });
+
+    return response.data.values || [];
+  } catch (error: unknown) {
+    console.error('Google Sheets Contractor OT API error:', getErrorMessage(error));
+    return null;
+  }
+}
+
+export async function getEmployeeOtErrorSheetData() {
+  const sheetId = process.env.GOOGLE_OT_EMPLOYEE_SHEET_ID;
+  if (!sheetId) {
+    console.error('Missing GOOGLE_OT_EMPLOYEE_SHEET_ID');
+    return null;
+  }
+
+  const client = getSheetsClientForSheet(sheetId);
+  if (!client) return null;
+
+  try {
+    const response = await client.sheets.spreadsheets.values.get({
+      spreadsheetId: client.sheetId,
+      range: "'Check OT Error'!B2:AK40",
+    });
+
+    return response.data.values || [];
+  } catch (error: unknown) {
+    console.error('Google Sheets Employee OT Error API error:', getErrorMessage(error));
+    return null;
+  }
+}
+
+export async function getContractorOtErrorSheetData() {
   const sheetId = process.env.GOOGLE_OT_CONTRACTOR_SHEET_ID;
   if (!sheetId) {
     console.error('Missing GOOGLE_OT_CONTRACTOR_SHEET_ID');
@@ -164,12 +215,12 @@ export async function getContractorOtSheetData() {
   try {
     const response = await client.sheets.spreadsheets.values.get({
       spreadsheetId: client.sheetId,
-      range: "'สรุปOT0669'!B2:AO34",
+      range: "'Check OT Error'!B2:AJ100",
     });
 
     return response.data.values || [];
-  } catch (error: any) {
-    console.error('Google Sheets Contractor OT API error:', error.message);
+  } catch (error: unknown) {
+    console.error('Google Sheets Contractor OT Error API error:', getErrorMessage(error));
     return null;
   }
 }
