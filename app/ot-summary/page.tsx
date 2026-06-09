@@ -24,6 +24,7 @@ type OtErrorRow = {
   employeeId: string;
   name: string;
   position: string;
+  group: string;
   days: boolean[];
   total: number;
 };
@@ -293,22 +294,26 @@ export default function OtSummaryPage() {
   const allContractorTotals = getContractorTotals(contractors);
   const employeeSections = otGroups.map((group) => {
     const rows = employees.filter((employee) => employee.group === group);
+    const errors = employeeErrors.filter((err) => err.group === group);
     const totals = getEmployeeTotals(rows);
 
     return {
       group,
       rows,
+      errors,
       totals,
       averageOt: rows.length ? totals.total / rows.length : 0,
     };
   });
   const contractorSections = otGroups.map((group) => {
     const rows = contractors.filter((contractor) => contractor.group === group);
+    const errors = contractorErrors.filter((err) => err.group === group);
     const totals = getContractorTotals(rows);
 
     return {
       group,
       rows,
+      errors,
       totals,
       averageOt: rows.length ? totals.total / rows.length : 0,
     };
@@ -377,7 +382,7 @@ export default function OtSummaryPage() {
       ) : (
         <>
           <div className="flex flex-col gap-8">
-            {contractorSections.map(({ group, rows, totals, averageOt }) => (
+            {contractorSections.map(({ group, rows, errors, totals, averageOt }) => (
               <section key={group} className="overflow-hidden rounded-3xl border border-[#f4bfd2] border-b-[5px] border-b-[#f1a9c4] bg-[#fff0f6] shadow-[0_8px_18px_rgba(244,114,182,0.12)]">
                 <div className="border-b border-[#f4bfd2] bg-[#fff8fb] p-4 md:p-8">
                   <h2 className="flex items-center gap-3 text-2xl font-black text-[#061b3d] md:text-4xl">
@@ -410,6 +415,15 @@ export default function OtSummaryPage() {
 
                   <div className="min-w-0">
                     {renderContractorTable(rows, totals, group)}
+                    {errors.length > 0 && (
+                      <div className="mt-8">
+                        <h3 className="text-lg font-black text-red-600 mb-3 flex items-center gap-2">
+                          <div className="w-2 h-5 bg-red-500 rounded-full"></div>
+                          ตรวจสอบข้อผิดพลาด OT ลูกจ้าง {group}
+                        </h3>
+                        {renderOtErrorTable(errors, 'contractor')}
+                      </div>
+                    )}
                   </div>
                 </div>
               </section>
@@ -424,21 +438,12 @@ export default function OtSummaryPage() {
               </div>
               <div className="p-4 md:p-8">
                 {renderContractorTable(contractors, allContractorTotals, 'ALL-CONTRACTORS')}
-                {contractorErrors.length > 0 && (
-                  <div className="mt-10">
-                    <h3 className="text-xl font-black text-red-600 mb-4 flex items-center gap-2">
-                      <div className="w-2 h-6 bg-red-500 rounded-full"></div>
-                      ตรวจสอบข้อผิดพลาด OT ลูกจ้าง
-                    </h3>
-                    {renderOtErrorTable(contractorErrors, 'contractor')}
-                  </div>
-                )}
               </div>
             </section>
           </div>
 
           <div className="mt-8 flex flex-col gap-8">
-            {employeeSections.map(({ group, rows, totals, averageOt }) => (
+            {employeeSections.map(({ group, rows, errors, totals, averageOt }) => (
               <section key={group} className="overflow-hidden rounded-3xl border border-[#efd58d] border-b-[5px] border-b-[#eecb70] bg-[#fff8da] shadow-[0_8px_18px_rgba(234,179,8,0.12)]">
                 <div className="border-b border-[#efd58d] bg-[#fffdf1] p-4 md:p-8">
                   <h2 className="flex items-center gap-3 text-2xl font-black text-[#061b3d] md:text-4xl">
@@ -467,6 +472,15 @@ export default function OtSummaryPage() {
 
                   <div className="min-w-0">
                     {renderEmployeeTable(rows, group)}
+                    {errors.length > 0 && (
+                      <div className="mt-8">
+                        <h3 className="text-lg font-black text-red-600 mb-3 flex items-center gap-2">
+                          <div className="w-2 h-5 bg-red-500 rounded-full"></div>
+                          ตรวจสอบข้อผิดพลาด OT พนักงาน {group}
+                        </h3>
+                        {renderOtErrorTable(errors, 'employee')}
+                      </div>
+                    )}
                   </div>
                 </div>
               </section>
@@ -485,7 +499,7 @@ export default function OtSummaryPage() {
                   <div className="mt-10">
                     <h3 className="text-xl font-black text-red-600 mb-4 flex items-center gap-2">
                       <div className="w-2 h-6 bg-red-500 rounded-full"></div>
-                      ตรวจสอบข้อผิดพลาด OT พนักงาน
+                      ตรวจสอบข้อผิดพลาด OT พนักงาน (ทั้งหมด)
                     </h3>
                     {renderOtErrorTable(employeeErrors, 'employee')}
                   </div>
