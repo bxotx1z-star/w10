@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { Activity, ChevronDown, Clock, Factory, HardHat, Info, LayoutDashboard, RefreshCw, Shield, ShoppingCart, Zap } from 'lucide-react';
+import { Activity, AlertCircle, CheckCircle2, ChevronDown, Clock, Factory, HardHat, Info, LayoutDashboard, RefreshCw, Shield, ShoppingCart, Zap } from 'lucide-react';
 import Highcharts from 'highcharts';
 import HighchartsReact from 'highcharts-react-official';
 import { ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
@@ -52,25 +52,6 @@ const GroupBlock = ({ name, stats, themeColor, isSummary = false, imgSrc }: any)
           <div className="flex justify-between gap-4 font-black text-slate-950 pt-2 mt-2 border-t border-slate-200/50 px-1"><span>งานออก</span><span className="text-xl">{stats?.out || 0}</span></div>
         </div>
       )}
-    </div>
-  );
-};
-
-const WOBlock = ({ statusData }: any) => {
-  const total = statusData?.total || 1;
-  const sapPct = Math.round(((statusData?.sap || 0) / total) * 100);
-  const pendingPct = Math.round(((statusData?.pending || 0) / total) * 100);
-  const finishPct = Math.round(((statusData?.finish || 0) / total) * 100);
-  return (
-    <div className="flex flex-col rounded-2xl p-5 bg-[#5c607f] border-2 border-[#858bb5] shadow-md shadow-indigo-100/60 relative overflow-hidden transition-all hover:shadow-lg h-full">
-      <Activity className="absolute -right-4 -bottom-4 w-32 h-32 text-white/5 pointer-events-none" />
-      <div className="text-[12px] font-black text-[#ffef9a] uppercase tracking-widest mb-1.5 z-10">W/O</div>
-      <div className="text-5xl font-black text-white mb-5 z-10">{statusData?.total || 0}</div>
-      <div className="text-[14px] font-bold space-y-2.5 bg-white/10 backdrop-blur-sm p-4 rounded-xl border border-white/10 z-10 mt-auto">
-        <div className="flex justify-between"><span className="text-emerald-300">SAP</span><span className="text-white font-black">{statusData?.sap || 0} <span className="text-emerald-400 text-xs">({sapPct}%)</span></span></div>
-        <div className="flex justify-between"><span className="text-red-300">Pending</span><span className="text-white font-black">{statusData?.pending || 0} <span className="text-red-400 text-xs">({pendingPct}%)</span></span></div>
-        <div className="flex justify-between pt-2.5 border-t border-white/10"><span className="text-yellow-300">Finish</span><span className="text-white font-black">{statusData?.finish || 0} <span className="text-yellow-400 text-xs">({finishPct}%)</span></span></div>
-      </div>
     </div>
   );
 };
@@ -250,12 +231,13 @@ export default function DashboardPage() {
 
   return (
     <div className="p-4 md:p-8 bg-[#e2e2e2] min-h-screen text-slate-800 font-sans">
-      <header className="flex flex-col sm:flex-row justify-between items-center mb-6 md:mb-10 bg-white p-4 md:p-6 rounded-2xl md:rounded-3xl border-b-4 border-[#ffd56d] shadow-sm shadow-slate-200/70 gap-4">
+      <header className="sticky top-0 z-50 flex flex-col sm:flex-row justify-between items-center mb-4 bg-white/90 backdrop-blur-sm p-4 md:p-6 rounded-2xl md:rounded-3xl border-b-4 border-[#ffd56d] shadow-md shadow-slate-200/70 gap-4">
         <div className="flex items-center gap-4 md:gap-6">
           <div className="flex flex-col">
             <h1 className="text-xl md:text-3xl font-black tracking-tight text-[#4A4A49] uppercase flex items-center gap-2 md:gap-3">
               <img src="/picture/egat.png" alt="EGAT Logo" className="w-10 h-10 md:w-14 md:h-14 object-contain" />
               W10 Dashboard
+              <img src="/picture/รูปภาพ14-Photoroom.png" alt="W10 Icon" className="w-10 h-10 md:w-14 md:h-14 object-contain" />
             </h1>
             <p className="text-[10px] md:text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">EGAT Maintenance Dashboard</p>
           </div>
@@ -311,47 +293,92 @@ export default function DashboardPage() {
             <h3 className="font-black text-[#4A4A49] uppercase text-xl md:text-3xl tracking-wide flex items-center gap-3">
               <div className="w-3 h-7 md:h-10 bg-[#ffe08a] rounded-full"></div>
               <img src="/picture/Jacko-Photoroom.png" alt="Jacko Logo" className="h-8 md:h-11 object-contain mr-1" />
-              จำนวน W/O เข้าจากระบบ SAP
+              จำนวน W/O เข้าจากระบบ
               <img src="/picture/s-sap-erp.png" alt="SAP Logo" className="h-6 md:h-9 ml-1 md:ml-2 object-contain" />
             </h3>
             <Info className="text-slate-300 w-4 h-4 md:w-5 h-5 cursor-help" />
           </div>
-          <div className="grid grid-cols-1 xl:grid-cols-[minmax(320px,0.82fr)_minmax(500px,1.45fr)_minmax(300px,0.9fr)] gap-5 md:gap-6 items-stretch">
-              <div className="w-full xl:max-w-[320px] xl:self-start">
-                <WOBlock statusData={statusData} />
-              </div>
-              <div className="flex justify-center items-center bg-[#f5fbff]/80 rounded-2xl p-3 md:p-4 border border-[#cfe6f7]">
-                <div className="w-full max-w-[680px]">
-                  <HighchartsReact highcharts={Highcharts} options={statusChartOptions} />
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 md:gap-6 items-stretch">
+              {/* Block 1: Chart & Total */}
+              <div className="flex flex-col rounded-2xl p-5 bg-[#5c607f] border-2 border-[#858bb5] shadow-md relative overflow-hidden transition-all hover:shadow-lg h-full">
+                <Activity className="absolute -right-4 -bottom-4 w-32 h-32 text-white/5 pointer-events-none" />
+                <div className="text-[12px] font-black text-[#ffef9a] uppercase tracking-widest mb-1.5 z-10">Total W/O</div>
+                <div className="text-5xl font-black text-white mb-2 z-10">{statusData?.total || 0}</div>
+                <div className="flex-1 flex items-center justify-center min-h-[200px]">
+                  <div className="w-full h-full scale-110 origin-center">
+                    <HighchartsReact 
+                      highcharts={Highcharts} 
+                      options={{
+                        ...statusChartOptions,
+                        chart: { ...statusChartOptions.chart, height: 200, margin: [0, 0, 0, 0], spacing: [0, 0, 0, 0] },
+                        plotOptions: { 
+                          pie: { 
+                            ...statusChartOptions.plotOptions.pie, 
+                            size: '100%',
+                            dataLabels: { enabled: false } 
+                          } 
+                        }
+                      }} 
+                    />
+                  </div>
                 </div>
               </div>
-              <div className="overflow-hidden rounded-2xl border-2 border-slate-100 flex flex-col justify-center">
-                  <table className="w-full text-center font-black text-slate-500 border-collapse border border-slate-200">
-                      <thead className="bg-slate-100/80">
-                        <tr>
-                          <th className="p-3 md:p-4 uppercase tracking-tighter text-[10px] md:text-xs border border-slate-200">สถานะ</th>
-                          <th className="p-3 md:p-4 uppercase tracking-tighter text-[10px] md:text-xs border border-slate-200">จำนวน</th>
-                        </tr>
-                      </thead>
-                      <tbody className="bg-white/50">
-                        <tr>
-                          <td className="p-3 md:p-4 text-slate-500 text-left pl-4 md:pl-8 text-xs md:text-base border border-slate-200">SAP</td>
-                          <td className="p-3 md:p-4 text-slate-700 text-lg md:text-2xl border border-slate-200">{statusData?.sap || 0}</td>
-                        </tr>
-                        <tr>
-                          <td className="p-3 md:p-4 text-slate-500 text-left pl-4 md:pl-8 text-xs md:text-base border border-slate-200">Pending</td>
-                          <td className="p-3 md:p-4 text-slate-700 text-lg md:text-2xl border border-slate-200">{statusData?.pending || 0}</td>
-                        </tr>
-                        <tr>
-                          <td className="p-3 md:p-4 text-slate-500 text-left pl-4 md:pl-8 text-xs md:text-base border border-slate-200">Finish</td>
-                          <td className="p-3 md:p-4 text-slate-700 text-lg md:text-2xl border border-slate-200">{statusData?.finish || 0}</td>
-                        </tr>
-                        <tr className="bg-yellow-50">
-                          <td className="p-3 md:p-4 text-[#4A4A49] text-left pl-4 md:pl-8 border border-slate-200 text-xs md:text-base font-bold">รวม (W/O)</td>
-                          <td className="p-3 md:p-4 font-black text-[#4A4A49] text-2xl md:text-4xl border border-slate-200">{statusData?.total || 0}</td>
-                        </tr>
-                      </tbody>
-                  </table>
+
+              {/* Block 2: Pending */}
+              <div className="flex flex-col rounded-3xl p-6 bg-white border-2 border-rose-100 shadow-sm relative overflow-hidden transition-all hover:shadow-md h-full group">
+                <div className="flex items-center justify-between mb-4 z-10">
+                  <div className="text-xl md:text-2xl font-black text-rose-700 uppercase tracking-tighter">Pending</div>
+                  <div className="p-2.5 bg-rose-100 rounded-2xl text-rose-600 group-hover:scale-110 transition-transform">
+                    <Clock size={32} />
+                  </div>
+                </div>
+                <div className="mt-auto z-10">
+                  <div className="text-5xl font-black text-slate-800 mb-2">{statusData?.pending || 0}</div>
+                  <div className="flex items-center gap-2">
+                    <div className="h-2 flex-1 bg-slate-100 rounded-full overflow-hidden">
+                      <div className="h-full bg-rose-500 rounded-full" style={{ width: `${pendingPct}%` }}></div>
+                    </div>
+                    <span className="text-[12px] font-black text-rose-600">{pendingPct}%</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Block 3: Finish */}
+              <div className="flex flex-col rounded-3xl p-6 bg-white border-2 border-amber-100 shadow-sm relative overflow-hidden transition-all hover:shadow-md h-full group">
+                <div className="flex items-center justify-between mb-4 z-10">
+                  <div className="text-xl md:text-2xl font-black text-amber-700 uppercase tracking-tighter">Finish</div>
+                  <div className="p-2.5 bg-amber-100 rounded-2xl text-amber-600 group-hover:scale-110 transition-transform">
+                    <AlertCircle size={32} />
+                  </div>
+                </div>
+                <div className="mt-auto z-10">
+                  <div className="text-5xl font-black text-slate-800 mb-2">{statusData?.finish || 0}</div>
+                  <div className="flex items-center gap-2">
+                    <div className="h-2 flex-1 bg-slate-100 rounded-full overflow-hidden">
+                      <div className="h-full bg-amber-500 rounded-full" style={{ width: `${finishPct}%` }}></div>
+                    </div>
+                    <span className="text-[12px] font-black text-amber-600">{finishPct}%</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Block 4: SAP */}
+              <div className="flex flex-col rounded-3xl p-6 bg-white border-2 border-emerald-100 shadow-sm relative overflow-hidden transition-all hover:shadow-md h-full group">
+                <div className="flex items-center justify-between mb-4 z-10">
+                  <div className="text-xl md:text-2xl font-black text-emerald-700 uppercase tracking-tighter">SAP</div>
+                  <div className="p-2.5 bg-emerald-100 rounded-2xl text-emerald-600 group-hover:scale-110 transition-transform">
+                    <CheckCircle2 size={32} />
+                  </div>
+                </div>
+                <div className="mt-auto z-10">
+                  <div className="text-5xl font-black text-slate-800 mb-2">{statusData?.sap || 0}</div>
+                  <div className="flex items-center gap-2">
+                    <div className="h-2 flex-1 bg-slate-100 rounded-full overflow-hidden">
+                      <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${sapPct}%` }}></div>
+                    </div>
+                    <span className="text-[12px] font-black text-emerald-600">{sapPct}%</span>
+                  </div>
+                </div>
               </div>
           </div>
       </div>
@@ -372,8 +399,8 @@ export default function DashboardPage() {
         ))}
       </div>
 
-      <div className="bg-[#fff3cf] p-6 rounded-3xl border border-[#eecb70] shadow-sm shadow-yellow-100/50 mb-6 md:mb-8 text-center">
-          <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">รวม W/O ทั้งหมด</div>
+      <div className="bg-[#cdc1ff] p-6 rounded-3xl border border-[#c4b5fd] shadow-sm shadow-purple-100/50 mb-6 md:mb-8 text-center">
+          <div className="text-[10px] font-black text-slate-900 uppercase tracking-widest mb-1">รวม W/O ทั้งหมด</div>
           <div className="text-6xl font-black text-slate-900">{w_all?.entrance || 0}</div>
       </div>
 
@@ -390,16 +417,16 @@ export default function DashboardPage() {
               <div className="flex flex-col bg-[#f7f4ff]/90 rounded-2xl p-3 md:p-5 border-2 border-[#b9c4e8] shadow-sm overflow-hidden">
                 <HighchartsReact highcharts={Highcharts} options={equipChartOptions} />
               </div>
-              <div className="overflow-hidden rounded-2xl border-2 border-slate-100 overflow-x-auto">
+              <div className="overflow-hidden rounded-2xl border-2 border-[#b9c4e8] overflow-x-auto">
                   <table className="w-full text-center text-[13px] md:text-[15px] font-black text-slate-500 min-w-[560px] border-collapse border border-slate-200">
                       <thead className="bg-slate-100/80 uppercase">
                           <tr>
-                            <th className="p-3 md:p-5 tracking-normal border border-slate-200">Eq</th>
+                            <th className="p-3 md:p-5 tracking-normal border border-slate-200">Eqipment</th>
                             <th className="p-3 md:p-5 tracking-normal border border-slate-200">W11</th>
                             <th className="p-3 md:p-5 tracking-normal border border-slate-200">W12</th>
                             <th className="p-3 md:p-5 tracking-normal border border-slate-200">W13</th>
                             <th className="p-3 md:p-5 tracking-normal border border-slate-200">W14</th>
-                            <th className="p-3 md:p-5 text-[#4A4A49] bg-slate-200/50 border border-slate-200">รวม</th>
+                            <th className="p-3 md:p-5 text-[#4A4A49] bg-slate-100/50 border border-slate-200">รวม</th>
                           </tr>
                       </thead>
                       <tbody className="bg-white/50">
@@ -429,15 +456,15 @@ export default function DashboardPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-10">
         {[
-            { id: 'W11', color: 'yellow', icon: <Factory className="w-6 h-6 text-amber-500" /> }, 
-            { id: 'W12', color: 'green', icon: <Zap className="w-6 h-6 text-emerald-500" /> }, 
-            { id: 'W13', color: 'pink', icon: <Shield className="w-6 h-6 text-rose-500" /> }, 
-            { id: 'W14', color: 'blue', icon: <HardHat className="w-6 h-6 text-sky-500" /> }
+            { id: 'W11', color: 'yellow', icon: <img src="/picture/w11.png" alt="W11" className="w-12 h-12 object-contain" /> }, 
+            { id: 'W12', color: 'green', icon: <img src="/picture/w12.png" alt="W12" className="w-12 h-12 object-contain" /> }, 
+            { id: 'W13', color: 'pink', icon: <img src="/picture/w13.png" alt="W13" className="w-12 h-12 object-contain" /> }, 
+            { id: 'W14', color: 'blue', icon: <img src="/picture/w14.png" alt="W14" className="w-12 h-12 object-contain" /> }
         ].map((w) => (
           <div key={w.id} className="bg-[#fff8e8] rounded-[2rem] p-6 border-b-4 border-[#cde9d8] shadow-sm hover:shadow-md transition-all relative overflow-hidden group">
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
-                <div className="p-3 bg-slate-50 rounded-2xl group-hover:scale-110 transition-transform">
+                <div className="p-1 bg-white rounded-2xl group-hover:scale-110 transition-transform shadow-sm">
                   {w.icon}
                 </div>
                 <div>

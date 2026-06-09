@@ -316,7 +316,7 @@ export default function OtSummaryPage() {
 
   return (
     <div className="min-h-screen bg-[#dedede] p-4 text-slate-900 md:p-8 font-sans">
-      <header className="mb-10 flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between bg-white p-4 md:p-6 rounded-2xl md:rounded-3xl border-b-4 border-[#ffd56d] shadow-sm shadow-slate-200/70">
+      <header className="sticky top-0 z-50 mb-6 flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between bg-white/90 backdrop-blur-sm p-4 md:p-6 rounded-2xl md:rounded-3xl border-b-4 border-[#ffd56d] shadow-md shadow-slate-200/70">
         <div className="flex items-center gap-4">
           <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#5c607f] text-[#ffef9a] shadow-lg shadow-indigo-100/60">
             <Clock size={28} strokeWidth={2.5} />

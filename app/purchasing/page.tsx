@@ -313,14 +313,17 @@ export default function PurchasingPage() {
 
   return (
     <div className="min-h-screen bg-[#e2e2e2] p-4 text-slate-900 md:p-8 font-sans">
-      <header className="mb-10 flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between bg-white p-4 md:p-6 rounded-2xl md:rounded-3xl border-b-4 border-[#ffd56d] shadow-sm shadow-slate-200/70">
+      <header className="sticky top-0 z-50 mb-6 flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between bg-white/90 backdrop-blur-sm p-4 md:p-6 rounded-2xl md:rounded-3xl border-b-4 border-[#ffd56d] shadow-md shadow-slate-200/70">
         <div>
           <div className="flex items-center gap-4">
             <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#5c607f] text-[#ffef9a] shadow-lg shadow-indigo-100/60">
               <ShoppingCart size={28} strokeWidth={2.5} />
             </div>
             <div>
-              <h1 className="text-3xl md:text-4xl font-black uppercase tracking-tight text-[#4A4A49]">การจัดซื้อจัดจ้าง</h1>
+              <h1 className="text-3xl md:text-4xl font-black uppercase tracking-tight text-[#4A4A49] flex items-center gap-3">
+                การจัดซื้อจัดจ้าง
+                <img src="/picture/First-Photoroom.png" alt="Purchasing Icon" className="w-12 h-12 md:w-16 md:h-16 object-contain" />
+              </h1>
               <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mt-0.5">EGAT Procurement Summary</p>
             </div>
           </div>
