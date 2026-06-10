@@ -270,7 +270,7 @@ const renderOtErrorTable = (rows: OtErrorRow[], type: 'employee' | 'contractor')
                   )}
                 </td>
               ))}
-              <td className="border border-slate-700 bg-yellow-400 px-0.5 py-1 font-black text-[#4A4A49]">{row.total}</td>
+              <td className="border border-slate-700 bg-[#ff0000] px-0.5 py-1 font-black text-white">{row.total}</td>
             </tr>
           ))}
         </tbody>
