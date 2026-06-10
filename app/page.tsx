@@ -5,6 +5,24 @@ import { Activity, AlertCircle, CheckCircle2, ChevronDown, Clock, Factory, HardH
 import Highcharts from 'highcharts';
 import HighchartsReact from 'highcharts-react-official';
 import { ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { motion, AnimatePresence } from 'framer-motion';
+
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.1 }
+  }
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.5, ease: 'easeOut' }
+  }
+};
 
 const GroupBlock = ({ name, stats, themeColor, isSummary = false, imgSrc }: any) => {
   const colors: any = { 
@@ -24,7 +42,11 @@ const GroupBlock = ({ name, stats, themeColor, isSummary = false, imgSrc }: any)
   };
 
   return (
-    <div className={`flex flex-col rounded-3xl p-3.5 sm:p-5 ${colors[themeColor]} border shadow-sm relative overflow-hidden transition-all hover:shadow-lg hover:border-slate-300 h-full`}>
+    <motion.div 
+      variants={itemVariants}
+      whileHover={{ y: -5, shadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)' }}
+      className={`flex flex-col rounded-3xl p-3.5 sm:p-5 ${colors[themeColor]} border shadow-sm relative overflow-hidden transition-all h-full cursor-default`}
+    >
       {iconMap[name]}
       
       <div className="flex items-center gap-1.5 sm:gap-2.5 mb-4 z-10">
@@ -52,7 +74,7 @@ const GroupBlock = ({ name, stats, themeColor, isSummary = false, imgSrc }: any)
           <div className="flex justify-between gap-4 font-black text-slate-950 pt-2 mt-2 border-t border-slate-200/50 px-1"><span>งานออก</span><span className="text-xl">{stats?.out || 0}</span></div>
         </div>
       )}
-    </div>
+    </motion.div>
   );
 };
 
@@ -175,14 +197,18 @@ export default function DashboardPage() {
   };
 
   if (error) return (
-    <div className="p-10 text-center">
-      <div className="font-bold text-red-600 mb-4">{error}</div>
-      <button onClick={() => loadDashboard(year, month)} className="px-4 py-2 bg-slate-900 text-white rounded-xl font-bold">ลองใหม่</button>
+    <div className="p-10 text-center min-h-screen flex flex-col items-center justify-center bg-[#e2e2e2]">
+      <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="bg-white p-8 rounded-3xl shadow-xl border-b-4 border-red-500">
+        <AlertCircle size={48} className="text-red-500 mx-auto mb-4" />
+        <div className="font-black text-slate-800 text-2xl mb-4">{error}</div>
+        <button onClick={() => loadDashboard(year, month)} className="px-8 py-3 bg-slate-900 text-white rounded-2xl font-black hover:bg-slate-800 transition-all active:scale-95 flex items-center gap-2 mx-auto">
+          <RefreshCw size={18} /> ลองใหม่อีกครั้ง
+        </button>
+      </motion.div>
     </div>
   );
 
-  if (!data || !modulesLoaded) return <div className="p-10 text-center font-bold text-slate-500 text-lg">กำลังโหลด...</div>;
-  const { wGauges = {}, groupStats = {}, w_all = {}, statusData = {}, equipmentData = [] } = data;
+  const { wGauges = {}, groupStats = {}, w_all = {}, statusData = {}, equipmentData = [] } = data || {};
 
   const statusChartOptions = {
     chart: { type: 'pie', height: 440, backgroundColor: 'transparent', options3d: { enabled: true, alpha: 45 } },
@@ -231,7 +257,12 @@ export default function DashboardPage() {
 
   return (
     <div className="p-4 md:p-8 bg-[#e2e2e2] min-h-screen text-slate-800 font-sans">
-      <header className="sticky top-0 z-50 flex flex-col sm:flex-row justify-between items-center mb-4 bg-white/90 backdrop-blur-sm p-4 md:p-6 rounded-2xl md:rounded-3xl border-b-4 border-[#ffd56d] shadow-md shadow-slate-200/70 gap-4">
+      <motion.header 
+        className="sticky top-0 z-50 flex flex-col sm:flex-row justify-between items-center mb-4 bg-white/90 backdrop-blur-sm p-4 md:p-6 rounded-2xl md:rounded-3xl border-b-4 border-[#ffd56d] shadow-md shadow-slate-200/70 gap-4"
+        initial={{ y: -50, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ type: 'spring', damping: 15 }}
+      >
         <div className="flex items-center gap-4 md:gap-6">
           <div className="flex flex-col">
             <h1 className="text-xl md:text-3xl font-black tracking-tight text-[#4A4A49] uppercase flex items-center gap-2 md:gap-3">
@@ -244,7 +275,18 @@ export default function DashboardPage() {
         </div>
         <div className="flex flex-wrap items-center justify-center gap-3">
             <img src="/picture/saksit-Photoroom.png" alt="Saksit Logo" className="h-8 md:h-10 object-contain mr-2" />
-            {isLoading && <span className="flex items-center text-[10px] md:text-xs font-black text-[#d4a300] animate-pulse mr-2 bg-yellow-50 px-2 py-1 rounded-lg uppercase">Updating...</span>}
+            <AnimatePresence>
+              {isLoading && (
+                <motion.span 
+                  className="flex items-center text-[10px] md:text-xs font-black text-[#d4a300] mr-2 bg-yellow-50 px-2 py-1 rounded-lg uppercase"
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.8 }}
+                >
+                  Updating...
+                </motion.span>
+              )}
+            </AnimatePresence>
             <div className="flex gap-1.5 bg-slate-100 p-1 md:p-1.5 rounded-xl md:rounded-2xl border border-slate-200">
               <select className="px-2 md:px-4 py-1.5 md:py-2 rounded-lg md:rounded-xl bg-white text-xs md:text-sm font-black text-[#4A4A49] outline-none shadow-sm cursor-pointer hover:bg-slate-50 transition" value={year} onChange={handleYearChange}>
                 <option value="all">รวมทุกปี</option>
@@ -255,235 +297,278 @@ export default function DashboardPage() {
                 {THAI_MONTHS.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
               </select>
             </div>
-            <button
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
               type="button"
               onClick={handleRefresh}
               disabled={isLoading}
-              className="px-3 md:px-4 py-2 md:py-3 bg-white text-[#4A4A49] rounded-xl md:rounded-2xl text-xs md:text-sm font-black hover:bg-slate-50 border border-slate-200 shadow-sm transition-all active:scale-95 flex items-center gap-2 disabled:opacity-60"
+              className="px-3 md:px-4 py-2 md:py-3 bg-white text-[#4A4A49] rounded-xl md:rounded-2xl text-xs md:text-sm font-black border border-slate-200 shadow-sm flex items-center gap-2 disabled:opacity-60 transition-all"
             >
               <RefreshCw size={16} strokeWidth={3} className={isLoading ? 'animate-spin text-[#d4a300]' : 'text-slate-500'} />
               รีเฟรชข้อมูล
-            </button>
+            </motion.button>
             <div className="relative">
-              <button
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
                 type="button"
                 onClick={() => setMenuOpen((value) => !value)}
-                className="px-4 md:px-6 py-2 md:py-3 bg-[#ffe08a] text-[#4A4A49] rounded-xl md:rounded-2xl text-xs md:text-sm font-black hover:bg-[#ffd56a] shadow-lg shadow-yellow-200/50 transition-all active:scale-95 flex items-center gap-2"
+                className="px-4 md:px-6 py-2 md:py-3 bg-[#ffe08a] text-[#4A4A49] rounded-xl md:rounded-2xl text-xs md:text-sm font-black hover:bg-[#ffd56a] shadow-lg transition-all flex items-center gap-2"
               >
                 เมนูหน้า
                 <ChevronDown size={16} strokeWidth={3} className={menuOpen ? 'rotate-180 transition-transform' : 'transition-transform'} />
-              </button>
-              {menuOpen && (
-                <div className="absolute right-0 top-full z-20 mt-2 w-64 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl shadow-slate-300/40">
-                  <a href="/purchasing" className="flex items-center gap-3 px-4 py-3 text-sm font-black text-[#4A4A49] hover:bg-yellow-50">
-                    <ShoppingCart size={18} className="text-[#d4a300]" /> จัดซื้อจัดจ้าง
-                  </a>
-                  <a href="/ot-summary" className="flex items-center gap-3 border-t border-slate-100 px-4 py-3 text-sm font-black text-[#4A4A49] hover:bg-sky-50">
-                    <Clock size={18} className="text-sky-500" /> สรุปโอทีลูกจ้างและพนักงาน
-                  </a>
-                </div>
-              )}
+              </motion.button>
+              <AnimatePresence>
+                {menuOpen && (
+                  <motion.div 
+                    className="absolute right-0 top-full z-20 mt-2 w-64 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl shadow-slate-300/40"
+                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                  >
+                    <a href="/purchasing" className="flex items-center gap-3 px-4 py-3 text-sm font-black text-[#4A4A49] hover:bg-yellow-50">
+                      <ShoppingCart size={18} className="text-[#d4a300]" /> จัดซื้อจัดจ้าง
+                    </a>
+                    <a href="/ot-summary" className="flex items-center gap-3 border-t border-slate-100 px-4 py-3 text-sm font-black text-[#4A4A49] hover:bg-sky-50">
+                      <Clock size={18} className="text-sky-500" /> สรุปโอทีลูกจ้างและพนักงาน
+                    </a>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
         </div>
-      </header>
+      </motion.header>
 
-      {/* Section 1: Operation Status */}
-      <div className="bg-[#e8f5ff]/95 border-b-4 border-[#b9dcff] p-4 md:p-8 rounded-[1.5rem] md:rounded-[2rem] shadow-sm shadow-sky-100/60 relative overflow-hidden flex flex-col mb-6 md:mb-8">
-          <div className="flex items-center justify-between mb-6 md:mb-8">
-            <h3 className="font-black text-[#4A4A49] uppercase text-xl md:text-3xl tracking-wide flex items-center gap-3">
-              <div className="w-3 h-7 md:h-10 bg-[#ffe08a] rounded-full"></div>
-              <img src="/picture/Jacko-Photoroom.png" alt="Jacko Logo" className="h-8 md:h-11 object-contain mr-1" />
-              จำนวน W/O เข้าจากระบบ
-              <img src="/picture/s-sap-erp.png" alt="SAP Logo" className="h-6 md:h-9 ml-1 md:ml-2 object-contain" />
-            </h3>
-            <Info className="text-slate-300 w-4 h-4 md:w-5 h-5 cursor-help" />
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 md:gap-6 items-stretch">
-              {/* Block 1: Chart & Total */}
-              <div className="flex flex-col rounded-2xl p-5 bg-[#5c607f] border-2 border-[#858bb5] shadow-md relative overflow-hidden transition-all hover:shadow-lg h-full">
-                <Activity className="absolute -right-4 -bottom-4 w-32 h-32 text-white/5 pointer-events-none" />
-                <div className="text-[12px] font-black text-[#ffef9a] uppercase tracking-widest mb-1.5 z-10">Total W/O</div>
-                <div className="text-5xl font-black text-white mb-2 z-10">{statusData?.total || 0}</div>
-                <div className="flex-1 flex items-center justify-center min-h-[200px]">
-                  <div className="w-full h-full scale-110 origin-center">
-                    <HighchartsReact 
-                      highcharts={Highcharts} 
-                      options={{
-                        ...statusChartOptions,
-                        chart: { ...statusChartOptions.chart, height: 200, margin: [0, 0, 0, 0], spacing: [0, 0, 0, 0] },
-                        plotOptions: { 
-                          pie: { 
-                            ...statusChartOptions.plotOptions.pie, 
-                            size: '100%',
-                            dataLabels: { enabled: false } 
-                          } 
-                        }
-                      }} 
-                    />
-                  </div>
+      <AnimatePresence mode="wait">
+        {isLoading || !data || !modulesLoaded ? (
+          <motion.div 
+            key="loading"
+            className="flex items-center justify-center p-20 text-lg font-black text-slate-400 uppercase tracking-widest animate-pulse"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <RefreshCw size={24} className="animate-spin mr-3 text-[#d4a300]" /> กำลังโหลดข้อมูล...
+          </motion.div>
+        ) : (
+          <motion.div 
+            key="content"
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+          >
+            {/* Section 1: Operation Status */}
+            <motion.div variants={itemVariants} className="bg-[#e8f5ff]/95 border-b-4 border-[#b9dcff] p-4 md:p-8 rounded-[1.5rem] md:rounded-[2rem] shadow-sm shadow-sky-100/60 relative overflow-hidden flex flex-col mb-6 md:mb-8">
+                <div className="flex items-center justify-between mb-6 md:mb-8">
+                  <h3 className="font-black text-[#4A4A49] uppercase text-xl md:text-3xl tracking-wide flex items-center gap-3">
+                    <div className="w-3 h-7 md:h-10 bg-[#ffe08a] rounded-full"></div>
+                    <img src="/picture/Jacko-Photoroom.png" alt="Jacko Logo" className="h-8 md:h-11 object-contain mr-1" />
+                    จำนวน W/O เข้าจากระบบ
+                    <img src="/picture/s-sap-erp.png" alt="SAP Logo" className="h-6 md:h-9 ml-1 md:ml-2 object-contain" />
+                  </h3>
+                  <Info className="text-slate-300 w-4 h-4 md:w-5 h-5 cursor-help" />
                 </div>
-              </div>
-
-              {/* Block 2: Pending */}
-              <div className="flex flex-col rounded-3xl p-6 bg-white border-2 border-rose-100 shadow-sm relative overflow-hidden transition-all hover:shadow-md h-full group">
-                <div className="flex items-center justify-between mb-4 z-10">
-                  <div className="text-xl md:text-2xl font-black text-rose-700 uppercase tracking-tighter">Pending</div>
-                  <div className="p-2.5 bg-rose-100 rounded-2xl text-rose-600 group-hover:scale-110 transition-transform">
-                    <Clock size={32} />
-                  </div>
-                </div>
-                <div className="mt-auto z-10">
-                  <div className="text-5xl font-black text-slate-800 mb-2">{statusData?.pending || 0}</div>
-                  <div className="flex items-center gap-2">
-                    <div className="h-2 flex-1 bg-slate-100 rounded-full overflow-hidden">
-                      <div className="h-full bg-rose-500 rounded-full" style={{ width: `${pendingPct}%` }}></div>
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 md:gap-6 items-stretch">
+                    {/* Block 1: Chart & Total */}
+                    <div className="flex flex-col rounded-2xl p-5 bg-[#5c607f] border-2 border-[#858bb5] shadow-md relative overflow-hidden transition-all hover:shadow-lg h-full">
+                      <Activity className="absolute -right-4 -bottom-4 w-32 h-32 text-white/5 pointer-events-none" />
+                      <div className="text-[12px] font-black text-[#ffef9a] uppercase tracking-widest mb-1.5 z-10">Total W/O</div>
+                      <div className="text-5xl font-black text-white mb-2 z-10">{statusData?.total || 0}</div>
+                      <div className="flex-1 flex items-center justify-center min-h-[200px]">
+                        <div className="w-full h-full scale-110 origin-center">
+                          <HighchartsReact 
+                            highcharts={Highcharts} 
+                            options={{
+                              ...statusChartOptions,
+                              chart: { ...statusChartOptions.chart, height: 200, margin: [0, 0, 0, 0], spacing: [0, 0, 0, 0] },
+                              plotOptions: { 
+                                pie: { 
+                                  ...statusChartOptions.plotOptions.pie, 
+                                  size: '100%',
+                                  dataLabels: { enabled: false } 
+                                } 
+                              }
+                            }} 
+                          />
+                        </div>
+                      </div>
                     </div>
-                    <span className="text-[12px] font-black text-rose-600">{pendingPct}%</span>
-                  </div>
-                </div>
-              </div>
 
-              {/* Block 3: Finish */}
-              <div className="flex flex-col rounded-3xl p-6 bg-white border-2 border-amber-100 shadow-sm relative overflow-hidden transition-all hover:shadow-md h-full group">
-                <div className="flex items-center justify-between mb-4 z-10">
-                  <div className="text-xl md:text-2xl font-black text-amber-700 uppercase tracking-tighter">Finish</div>
-                  <div className="p-2.5 bg-amber-100 rounded-2xl text-amber-600 group-hover:scale-110 transition-transform">
-                    <AlertCircle size={32} />
-                  </div>
-                </div>
-                <div className="mt-auto z-10">
-                  <div className="text-5xl font-black text-slate-800 mb-2">{statusData?.finish || 0}</div>
-                  <div className="flex items-center gap-2">
-                    <div className="h-2 flex-1 bg-slate-100 rounded-full overflow-hidden">
-                      <div className="h-full bg-amber-500 rounded-full" style={{ width: `${finishPct}%` }}></div>
-                    </div>
-                    <span className="text-[12px] font-black text-amber-600">{finishPct}%</span>
-                  </div>
-                </div>
-              </div>
+                    {/* Block 2: Pending */}
+                    <motion.div whileHover={{ y: -5 }} className="flex flex-col rounded-3xl p-6 bg-white border-2 border-rose-100 shadow-sm relative overflow-hidden h-full group">
+                      <div className="flex items-center justify-between mb-4 z-10">
+                        <div className="text-xl md:text-2xl font-black text-rose-700 uppercase tracking-tighter">Pending</div>
+                        <div className="p-2.5 bg-rose-100 rounded-2xl text-rose-600 group-hover:scale-110 transition-transform">
+                          <Clock size={32} />
+                        </div>
+                      </div>
+                      <div className="mt-auto z-10">
+                        <div className="text-5xl font-black text-slate-800 mb-2">{statusData?.pending || 0}</div>
+                        <div className="flex items-center gap-2">
+                          <div className="h-2 flex-1 bg-slate-100 rounded-full overflow-hidden">
+                            <motion.div initial={{ width: 0 }} animate={{ width: `${pendingPct}%` }} transition={{ duration: 1 }} className="h-full bg-rose-500 rounded-full"></motion.div>
+                          </div>
+                          <span className="text-[12px] font-black text-rose-600">{pendingPct}%</span>
+                        </div>
+                      </div>
+                    </motion.div>
 
-              {/* Block 4: SAP */}
-              <div className="flex flex-col rounded-3xl p-6 bg-white border-2 border-emerald-100 shadow-sm relative overflow-hidden transition-all hover:shadow-md h-full group">
-                <div className="flex items-center justify-between mb-4 z-10">
-                  <div className="text-xl md:text-2xl font-black text-emerald-700 uppercase tracking-tighter">SAP</div>
-                  <div className="p-2.5 bg-emerald-100 rounded-2xl text-emerald-600 group-hover:scale-110 transition-transform">
-                    <CheckCircle2 size={32} />
-                  </div>
+                    {/* Block 3: Finish */}
+                    <motion.div whileHover={{ y: -5 }} className="flex flex-col rounded-3xl p-6 bg-white border-2 border-amber-100 shadow-sm relative overflow-hidden h-full group">
+                      <div className="flex items-center justify-between mb-4 z-10">
+                        <div className="text-xl md:text-2xl font-black text-amber-700 uppercase tracking-tighter">Finish</div>
+                        <div className="p-2.5 bg-amber-100 rounded-2xl text-amber-600 group-hover:scale-110 transition-transform">
+                          <AlertCircle size={32} />
+                        </div>
+                      </div>
+                      <div className="mt-auto z-10">
+                        <div className="text-5xl font-black text-slate-800 mb-2">{statusData?.finish || 0}</div>
+                        <div className="flex items-center gap-2">
+                          <div className="h-2 flex-1 bg-slate-100 rounded-full overflow-hidden">
+                            <motion.div initial={{ width: 0 }} animate={{ width: `${finishPct}%` }} transition={{ duration: 1 }} className="h-full bg-amber-500 rounded-full"></motion.div>
+                          </div>
+                          <span className="text-[12px] font-black text-amber-600">{finishPct}%</span>
+                        </div>
+                      </div>
+                    </motion.div>
+
+                    {/* Block 4: SAP */}
+                    <motion.div whileHover={{ y: -5 }} className="flex flex-col rounded-3xl p-6 bg-white border-2 border-emerald-100 shadow-sm relative overflow-hidden h-full group">
+                      <div className="flex items-center justify-between mb-4 z-10">
+                        <div className="text-xl md:text-2xl font-black text-emerald-700 uppercase tracking-tighter">SAP</div>
+                        <div className="p-2.5 bg-emerald-100 rounded-2xl text-emerald-600 group-hover:scale-110 transition-transform">
+                          <CheckCircle2 size={32} />
+                        </div>
+                      </div>
+                      <div className="mt-auto z-10">
+                        <div className="text-5xl font-black text-slate-800 mb-2">{statusData?.sap || 0}</div>
+                        <div className="flex items-center gap-2">
+                          <div className="h-2 flex-1 bg-slate-100 rounded-full overflow-hidden">
+                            <motion.div initial={{ width: 0 }} animate={{ width: `${sapPct}%` }} transition={{ duration: 1 }} className="h-full bg-emerald-500 rounded-full"></motion.div>
+                          </div>
+                          <span className="text-[12px] font-black text-emerald-600">{sapPct}%</span>
+                        </div>
+                      </div>
+                    </motion.div>
                 </div>
-                <div className="mt-auto z-10">
-                  <div className="text-5xl font-black text-slate-800 mb-2">{statusData?.sap || 0}</div>
-                  <div className="flex items-center gap-2">
-                    <div className="h-2 flex-1 bg-slate-100 rounded-full overflow-hidden">
-                      <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${sapPct}%` }}></div>
-                    </div>
-                    <span className="text-[12px] font-black text-emerald-600">{sapPct}%</span>
-                  </div>
-                </div>
-              </div>
-          </div>
-      </div>
+            </motion.div>
 
-      {/* Section 2: W Group Blocks */}
-      <h3 className="font-black text-[#4A4A49] uppercase text-xl md:text-3xl tracking-wide flex items-center gap-3 mb-6 md:mb-8">
-        <div className="w-3 h-7 md:h-10 bg-[#8bff81] rounded-full"></div>
-        W/O เข้าตามหมวด
-      </h3>
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-6 md:mb-8">
-        {[
-          { id: 'W11', name: 'W11', color: 'yellow', imgSrc: '/picture/chanwit-Photoroom.png' },
-          { id: 'W12', name: 'W12', color: 'green', imgSrc: '/picture/saman-Photoroom.png' }, // <- ใส่รูปเองได้ตรงนี้ เช่น '/picture/Jacko-Photoroom.png'
-          { id: 'W13', name: 'W13', color: 'pink', imgSrc: '/picture/sitiporn-Photoroom.png' },  // <- ใส่รูปเองได้ตรงนี้
-          { id: 'W14', name: 'W14', color: 'blue', imgSrc: '/picture/wutisak-Photoroom.png' }   // <- ใส่รูปเองได้ตรงนี้
-        ].map((w) => (
-          <GroupBlock key={w.id} name={w.name} stats={groupStats[w.id]} themeColor={w.color} imgSrc={w.imgSrc} />
-        ))}
-      </div>
-
-      <div className="bg-[#cdc1ff] p-6 rounded-3xl border border-[#c4b5fd] shadow-sm shadow-purple-100/50 mb-6 md:mb-8 text-center">
-          <div className="text-[10px] font-black text-slate-900 uppercase tracking-widest mb-1">รวม W/O ทั้งหมด</div>
-          <div className="text-6xl font-black text-slate-900">{w_all?.entrance || 0}</div>
-      </div>
-
-      {/* Section 3: Work by Group */}
-      <div className="bg-[#edf3ff]/95 border-b-4 border-[#c7d7ff] p-4 md:p-8 rounded-[1.5rem] md:rounded-[2rem] shadow-sm shadow-sky-100/60 relative overflow-hidden mb-8 md:mb-10">
-          <div className="flex items-center justify-between mb-6 md:mb-8">
-            <h3 className="font-black text-[#4A4A49] uppercase text-xl md:text-3xl tracking-wide flex items-center gap-3">
-              <div className="w-3 h-7 md:h-10 bg-[#f9a66c] rounded-full"></div>
-              งานเข้าตามกลุ่มงาน
-            </h3>
-            <Activity className="text-slate-300 w-4 h-4 md:w-5 h-5" />
-          </div>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-10 items-start">
-              <div className="flex flex-col bg-[#f7f4ff]/90 rounded-2xl p-3 md:p-5 border-2 border-[#b9c4e8] shadow-sm overflow-hidden">
-                <HighchartsReact highcharts={Highcharts} options={equipChartOptions} />
-              </div>
-              <div className="overflow-hidden rounded-2xl border-2 border-[#b9c4e8] overflow-x-auto">
-                  <table className="w-full text-center text-[13px] md:text-[15px] font-black text-slate-500 min-w-[560px] border-collapse border border-slate-200">
-                      <thead className="bg-slate-100/80 uppercase">
-                          <tr>
-                            <th className="p-3 md:p-5 tracking-normal border border-slate-200">Eqipment</th>
-                            <th className="p-3 md:p-5 tracking-normal border border-slate-200">W11</th>
-                            <th className="p-3 md:p-5 tracking-normal border border-slate-200">W12</th>
-                            <th className="p-3 md:p-5 tracking-normal border border-slate-200">W13</th>
-                            <th className="p-3 md:p-5 tracking-normal border border-slate-200">W14</th>
-                            <th className="p-3 md:p-5 text-[#4A4A49] bg-slate-100/50 border border-slate-200">รวม</th>
-                          </tr>
-                      </thead>
-                      <tbody className="bg-white/50">
-                          {equipmentData.map((e: any) => (
-                              <tr key={e.name} className={`transition-colors ${e.name === 'All' ? 'bg-yellow-50 font-black' : 'hover:bg-slate-100'}`}>
-                                  <td className={`p-3 md:p-4 text-left font-black border border-slate-200 ${e.name === 'All' ? 'text-amber-700' : 'text-[#4A4A49]'}`}>{e.name === 'All' ? 'รวมทั้งหมด' : e.name}</td>
-                                  <td className="p-3 md:p-4 border border-slate-200">{e.values[0]}</td>
-                                  <td className="p-3 md:p-4 border border-slate-200">{e.values[1]}</td>
-                                  <td className="p-3 md:p-4 border border-slate-200">{e.values[2]}</td>
-                                  <td className="p-3 md:p-4 border border-slate-200">{e.values[3]}</td>
-                                  <td className={`p-3 md:p-4 font-black border border-slate-200 ${e.name === 'All' ? 'text-amber-700 text-lg md:text-2xl' : 'text-[#4A4A49] bg-slate-100/30'}`}>{e.total}</td>
-                              </tr>
-                          ))}
-                      </tbody>
-                  </table>
-              </div>
-          </div>
-      </div>
-
-      <div className="flex items-center justify-between mb-6 md:mb-8">
-        <h3 className="font-black text-[#4A4A49] uppercase text-xl md:text-3xl tracking-wide flex items-center gap-3">
-          <div className="w-3 h-7 md:h-10 bg-[#22c55e] rounded-full"></div>
-          Load Factor / Man
-        </h3>
-        <Activity className="text-slate-300 w-4 h-4 md:w-5 h-5" />
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-10">
-        {[
-            { id: 'W11', color: 'yellow', icon: <img src="/picture/w11.png" alt="W11" className="w-12 h-12 object-contain" /> }, 
-            { id: 'W12', color: 'green', icon: <img src="/picture/w12.png" alt="W12" className="w-12 h-12 object-contain" /> }, 
-            { id: 'W13', color: 'pink', icon: <img src="/picture/w13.png" alt="W13" className="w-12 h-12 object-contain" /> }, 
-            { id: 'W14', color: 'blue', icon: <img src="/picture/w14.png" alt="W14" className="w-12 h-12 object-contain" /> }
-        ].map((w) => (
-          <div key={w.id} className="bg-[#fff8e8] rounded-[2rem] p-6 border-b-4 border-[#cde9d8] shadow-sm hover:shadow-md transition-all relative overflow-hidden group">
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-3">
-                <div className="p-1 bg-white rounded-2xl group-hover:scale-110 transition-transform shadow-sm">
-                  {w.icon}
-                </div>
-                <div>
-                  <h4 className="text-2xl font-black text-slate-800 tracking-wider uppercase">{w.id}</h4>
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Maintenance Capacity</p>
-                </div>
-              </div>
-              <div className="text-[8px] font-black text-slate-200 uppercase tracking-widest">Load Analysis</div>
+            {/* Section 2: W Group Blocks */}
+            <motion.h3 variants={itemVariants} className="font-black text-[#4A4A49] uppercase text-xl md:text-3xl tracking-wide flex items-center gap-3 mb-6 md:mb-8">
+              <div className="w-3 h-7 md:h-10 bg-[#8bff81] rounded-full"></div>
+              W/O เข้าตามหมวด
+            </motion.h3>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-6 md:mb-8">
+              {[
+                { id: 'W11', name: 'W11', color: 'yellow', imgSrc: '/picture/chanwit-Photoroom.png' },
+                { id: 'W12', name: 'W12', color: 'green', imgSrc: '/picture/saman-Photoroom.png' },
+                { id: 'W13', name: 'W13', color: 'pink', imgSrc: '/picture/sitiporn-Photoroom.png' },
+                { id: 'W14', name: 'W14', color: 'blue', imgSrc: '/picture/wutisak-Photoroom.png' }
+              ].map((w) => (
+                <GroupBlock key={w.id} name={w.name} stats={groupStats[w.id]} themeColor={w.color} imgSrc={w.imgSrc} />
+              ))}
             </div>
-            
-            <div className="grid grid-cols-2 gap-4">
-              <ModernGauge value={wGauges[w.id]?.empNorm} label="พนง ปกติ" />
-              <ModernGauge value={wGauges[w.id]?.conNorm} label="ลจ ปกติ" />
-              <ModernGauge value={wGauges[w.id]?.empOT} label="พนง +OT" />
-              <ModernGauge value={wGauges[w.id]?.conOT} label="ลจ +OT" />
+
+            <motion.div variants={itemVariants} className="bg-[#cdc1ff] p-6 rounded-3xl border border-[#c4b5fd] shadow-sm shadow-purple-100/50 mb-6 md:mb-8 text-center">
+                <div className="text-[10px] font-black text-slate-900 uppercase tracking-widest mb-1">รวม W/O ทั้งหมด</div>
+                <motion.div initial={{ scale: 0.8 }} animate={{ scale: 1 }} className="text-6xl font-black text-slate-900">{w_all?.entrance || 0}</motion.div>
+            </motion.div>
+
+            {/* Section 3: Work by Group */}
+            <motion.div variants={itemVariants} className="bg-[#edf3ff]/95 border-b-4 border-[#c7d7ff] p-4 md:p-8 rounded-[1.5rem] md:rounded-[2rem] shadow-sm shadow-sky-100/60 relative overflow-hidden mb-8 md:mb-10">
+                <div className="flex items-center justify-between mb-6 md:mb-8">
+                  <h3 className="font-black text-[#4A4A49] uppercase text-xl md:text-3xl tracking-wide flex items-center gap-3">
+                    <div className="w-3 h-7 md:h-10 bg-[#f9a66c] rounded-full"></div>
+                    งานเข้าตามกลุ่มงาน
+                  </h3>
+                  <Activity className="text-slate-300 w-4 h-4 md:w-5 h-5" />
+                </div>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-10 items-start">
+                    <div className="flex flex-col bg-[#f7f4ff]/90 rounded-2xl p-3 md:p-5 border-2 border-[#b9c4e8] shadow-sm overflow-hidden">
+                      <HighchartsReact highcharts={Highcharts} options={equipChartOptions} />
+                    </div>
+                    <div className="overflow-hidden rounded-2xl border-2 border-[#b9c4e8] overflow-x-auto">
+                        <table className="w-full text-center text-[13px] md:text-[15px] font-black text-slate-500 min-w-[560px] border-collapse border border-slate-200">
+                            <thead className="bg-slate-100/80 uppercase">
+                                <tr>
+                                  <th className="p-3 md:p-5 tracking-normal border border-slate-200">Eqipment</th>
+                                  <th className="p-3 md:p-5 tracking-normal border border-slate-200">W11</th>
+                                  <th className="p-3 md:p-5 tracking-normal border border-slate-200">W12</th>
+                                  <th className="p-3 md:p-5 tracking-normal border border-slate-200">W13</th>
+                                  <th className="p-3 md:p-5 tracking-normal border border-slate-200">W14</th>
+                                  <th className="p-3 md:p-5 text-[#4A4A49] bg-slate-100/50 border border-slate-200">รวม</th>
+                                </tr>
+                            </thead>
+                            <tbody className="bg-white/50">
+                                {equipmentData.map((e: any, idx: number) => (
+                                    <motion.tr 
+                                      key={e.name} 
+                                      initial={{ opacity: 0 }}
+                                      animate={{ opacity: 1 }}
+                                      transition={{ delay: idx * 0.05 }}
+                                      className={`transition-colors ${e.name === 'All' ? 'bg-yellow-50 font-black' : 'hover:bg-slate-100'}`}
+                                    >
+                                        <td className={`p-3 md:p-4 text-left font-black border border-slate-200 ${e.name === 'All' ? 'text-amber-700' : 'text-[#4A4A49]'}`}>{e.name === 'All' ? 'รวมทั้งหมด' : e.name}</td>
+                                        <td className="p-3 md:p-4 border border-slate-200">{e.values[0]}</td>
+                                        <td className="p-3 md:p-4 border border-slate-200">{e.values[1]}</td>
+                                        <td className="p-3 md:p-4 border border-slate-200">{e.values[2]}</td>
+                                        <td className="p-3 md:p-4 border border-slate-200">{e.values[3]}</td>
+                                        <td className={`p-3 md:p-4 font-black border border-slate-200 ${e.name === 'All' ? 'text-amber-700 text-lg md:text-2xl' : 'text-[#4A4A49] bg-slate-100/30'}`}>{e.total}</td>
+                                    </motion.tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </motion.div>
+
+            <motion.div variants={itemVariants} className="flex items-center justify-between mb-6 md:mb-8">
+              <h3 className="font-black text-[#4A4A49] uppercase text-xl md:text-3xl tracking-wide flex items-center gap-3">
+                <div className="w-3 h-7 md:h-10 bg-[#22c55e] rounded-full"></div>
+                Load Factor / Man
+              </h3>
+              <Activity className="text-slate-300 w-4 h-4 md:w-5 h-5" />
+            </motion.div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-10">
+              {[
+                  { id: 'W11', color: 'yellow', icon: <img src="/picture/w11.png" alt="W11" className="w-12 h-12 object-contain" /> }, 
+                  { id: 'W12', color: 'green', icon: <img src="/picture/w12.png" alt="W12" className="w-12 h-12 object-contain" /> }, 
+                  { id: 'W13', color: 'pink', icon: <img src="/picture/w13.png" alt="W13" className="w-12 h-12 object-contain" /> }, 
+                  { id: 'W14', color: 'blue', icon: <img src="/picture/w14.png" alt="W14" className="w-12 h-12 object-contain" /> }
+              ].map((w) => (
+                <motion.div 
+                  key={w.id} 
+                  variants={itemVariants}
+                  whileHover={{ y: -5 }}
+                  className="bg-[#fff8e8] rounded-[2rem] p-6 border-b-4 border-[#cde9d8] shadow-sm hover:shadow-md transition-all relative overflow-hidden group"
+                >
+                  <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center gap-3">
+                      <div className="p-1 bg-white rounded-2xl group-hover:scale-110 transition-transform shadow-sm">
+                        {w.icon}
+                      </div>
+                      <div>
+                        <h4 className="text-2xl font-black text-slate-800 tracking-wider uppercase">{w.id}</h4>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Maintenance Capacity</p>
+                      </div>
+                    </div>
+                    <div className="text-[8px] font-black text-slate-200 uppercase tracking-widest">Load Analysis</div>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <ModernGauge value={wGauges[w.id]?.empNorm} label="พนง ปกติ" />
+                    <ModernGauge value={wGauges[w.id]?.conNorm} label="ลจ ปกติ" />
+                    <ModernGauge value={wGauges[w.id]?.empOT} label="พนง +OT" />
+                    <ModernGauge value={wGauges[w.id]?.conOT} label="ลจ +OT" />
+                  </div>
+                </motion.div>
+              ))}
             </div>
-          </div>
-        ))}
-      </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

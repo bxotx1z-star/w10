@@ -1,10 +1,11 @@
 'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
-import { ArrowLeft, CalendarDays, ChevronDown, ClipboardList, Clock, Filter, RefreshCw, Search, ShoppingCart, ShoppingBag, Package, Truck, CreditCard } from 'lucide-react';
+import { ArrowLeft, CalendarDays, ChevronDown, ClipboardList, Clock, Filter, RefreshCw, Search, ShoppingCart, ShoppingBag, Package, Truck, CreditCard, AlertCircle } from 'lucide-react';
 import Highcharts from 'highcharts';
 import HighchartsReact from 'highcharts-react-official';
 import { Cell, Pie, PieChart, ResponsiveContainer } from 'recharts';
+import { motion, AnimatePresence } from 'framer-motion';
 
 type GaugeData = { empNorm?: number; empOT?: number; w11_1?: number; };
 type NameValue = { name: string; value: number; };
@@ -13,6 +14,23 @@ type PurchaseRow = { ecm_buy: string; ecm: string; wo: string; item: string; equ
 type PurchasingData = { gauges?: GaugeData; chartData?: NameValue[]; summaryTableData?: PairRow[]; secondChartData?: NameValue[]; secondTableData?: PairRow[]; purchaseList?: PurchaseRow[]; currentYear?: string; currentMonth?: string; error?: string; };
 
 const chartColors = ['#fde68a', '#fdba74', '#93c5fd', '#86efac', '#c4b5fd', '#f9a8d4', '#67e8f9', '#fca5a5'];
+
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.1 }
+  }
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.5, ease: 'easeOut' }
+  }
+};
 
 import ReactSpeedometer from 'react-d3-speedometer';
 
@@ -65,11 +83,15 @@ const StatCard = ({ label, value, tone = 'slate' }: { label: string; value: stri
   };
 
   return (
-    <div className={`grid min-h-[150px] grid-rows-[auto_1fr] rounded-2xl border-2 p-6 shadow-sm shadow-yellow-100/60 relative overflow-hidden group hover:shadow-md transition-all ${toneClasses[tone]}`}>
+    <motion.div 
+      variants={itemVariants}
+      whileHover={{ y: -5 }}
+      className={`grid min-h-[150px] grid-rows-[auto_1fr] rounded-2xl border-2 p-6 shadow-sm shadow-yellow-100/60 relative overflow-hidden group hover:shadow-md transition-all ${toneClasses[tone]}`}
+    >
       {iconMap[label]}
       <div className="whitespace-nowrap text-[13px] font-black uppercase tracking-wide text-slate-500 z-10">{label}</div>
       <div className="flex items-center justify-center text-5xl font-black z-10 text-[#4A4A49] group-hover:scale-105 transition-transform">{value}</div>
-    </div>
+    </motion.div>
   );
 };
 
@@ -313,12 +335,20 @@ export default function PurchasingPage() {
 
   return (
     <div className="min-h-screen bg-[#e2e2e2] p-4 text-slate-900 md:p-8 font-sans">
-      <header className="sticky top-0 z-50 mb-6 flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between bg-white/90 backdrop-blur-sm p-4 md:p-6 rounded-2xl md:rounded-3xl border-b-4 border-[#ffd56d] shadow-md shadow-slate-200/70">
+      <motion.header 
+        className="sticky top-0 z-50 mb-6 flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between bg-white/90 backdrop-blur-sm p-4 md:p-6 rounded-2xl md:rounded-3xl border-b-4 border-[#ffd56d] shadow-md shadow-slate-200/70"
+        initial={{ y: -50, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ type: 'spring', damping: 15 }}
+      >
         <div>
           <div className="flex items-center gap-4">
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#5c607f] text-[#ffef9a] shadow-lg shadow-indigo-100/60">
+            <motion.div 
+              whileHover={{ rotate: 10, scale: 1.1 }}
+              className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#5c607f] text-[#ffef9a] shadow-lg shadow-indigo-100/60"
+            >
               <ShoppingCart size={28} strokeWidth={2.5} />
-            </div>
+            </motion.div>
             <div>
               <h1 className="text-3xl md:text-4xl font-black uppercase tracking-tight text-[#4A4A49] flex items-center gap-3">
                 การจัดซื้อจัดจ้าง
@@ -330,7 +360,18 @@ export default function PurchasingPage() {
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
-          {isLoading && <span className="flex items-center text-xs font-black text-[#d4a300] animate-pulse mr-2 bg-yellow-50 px-2 py-1 rounded-lg uppercase">Updating...</span>}
+          <AnimatePresence>
+            {isLoading && (
+              <motion.span 
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.8 }}
+                className="flex items-center text-xs font-black text-[#d4a300] mr-2 bg-yellow-50 px-2 py-1 rounded-lg uppercase"
+              >
+                Updating...
+              </motion.span>
+            )}
+          </AnimatePresence>
           <div className="flex items-center gap-1.5 bg-slate-100 p-1.5 rounded-2xl border border-slate-200 shadow-inner">
             <Filter size={16} className="ml-2 text-slate-400" />
             <select className="h-10 rounded-xl bg-white px-4 text-sm font-black text-[#4A4A49] outline-none shadow-sm cursor-pointer hover:bg-slate-50 transition" value={year} onChange={handleYearChange}>
@@ -342,196 +383,238 @@ export default function PurchasingPage() {
               {THAI_MONTHS.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
             </select>
           </div>
-          <button
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
             type="button"
             onClick={handleRefresh}
             disabled={isLoading}
-            className="px-3 md:px-4 py-2 md:py-3 bg-white text-[#4A4A49] rounded-xl md:rounded-2xl text-xs md:text-sm font-black hover:bg-slate-50 border border-slate-200 shadow-sm transition-all active:scale-95 flex items-center gap-2 disabled:opacity-60"
+            className="px-3 md:px-4 py-2 md:py-3 bg-white text-[#4A4A49] rounded-xl md:rounded-2xl text-xs md:text-sm font-black hover:bg-slate-50 border border-slate-200 shadow-sm transition-all flex items-center gap-2 disabled:opacity-60"
           >
             <RefreshCw size={16} strokeWidth={3} className={isLoading ? 'animate-spin text-[#d4a300]' : 'text-slate-500'} />
             รีเฟรชข้อมูล
-          </button>
+          </motion.button>
           <div className="relative">
-            <button
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
               type="button"
               onClick={() => setMenuOpen((value) => !value)}
-              className="px-4 md:px-6 py-2 md:py-3 bg-[#ffe08a] text-[#4A4A49] rounded-xl md:rounded-2xl text-xs md:text-sm font-black hover:bg-[#ffd56a] shadow-lg shadow-yellow-200/50 transition-all active:scale-95 flex items-center gap-2"
+              className="px-4 md:px-6 py-2 md:py-3 bg-[#ffe08a] text-[#4A4A49] rounded-xl md:rounded-2xl text-xs md:text-sm font-black hover:bg-[#ffd56a] shadow-lg transition-all flex items-center gap-2"
             >
               เมนูหน้า
               <ChevronDown size={16} strokeWidth={3} className={menuOpen ? 'rotate-180 transition-transform' : 'transition-transform'} />
-            </button>
-            {menuOpen && (
-              <div className="absolute right-0 top-full z-20 mt-2 w-64 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl shadow-slate-300/40">
-                <a href="/" className="flex items-center gap-3 px-4 py-3 text-sm font-black text-[#4A4A49] hover:bg-slate-50">
-                  <ArrowLeft size={18} className="text-slate-500" /> หน้าหลัก
-                </a>
-                <a href="/purchasing" className="flex items-center gap-3 border-t border-slate-100 px-4 py-3 text-sm font-black text-[#4A4A49] hover:bg-yellow-50">
-                  <ShoppingCart size={18} className="text-[#d4a300]" /> จัดซื้อจัดจ้าง
-                </a>
-                <a href="/ot-summary" className="flex items-center gap-3 border-t border-slate-100 px-4 py-3 text-sm font-black text-[#4A4A49] hover:bg-sky-50">
-                  <Clock size={18} className="text-sky-500" /> สรุปโอทีลูกจ้างและพนักงาน
-                </a>
-              </div>
-            )}
+            </motion.button>
+            <AnimatePresence>
+              {menuOpen && (
+                <motion.div 
+                  initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                  className="absolute right-0 top-full z-20 mt-2 w-64 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl shadow-slate-300/40"
+                >
+                  <a href="/" className="flex items-center gap-3 px-4 py-3 text-sm font-black text-[#4A4A49] hover:bg-slate-50">
+                    <ArrowLeft size={18} className="text-slate-500" /> หน้าหลัก
+                  </a>
+                  <a href="/purchasing" className="flex items-center gap-3 border-t border-slate-100 px-4 py-3 text-sm font-black text-[#4A4A49] hover:bg-yellow-50">
+                    <ShoppingCart size={18} className="text-[#d4a300]" /> จัดซื้อจัดจ้าง
+                  </a>
+                  <a href="/ot-summary" className="flex items-center gap-3 border-t border-slate-100 px-4 py-3 text-sm font-black text-[#4A4A49] hover:bg-sky-50">
+                    <Clock size={18} className="text-sky-500" /> สรุปโอทีลูกจ้างและพนักงาน
+                  </a>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         </div>
-      </header>
+      </motion.header>
 
-      {error ? (
-        <div className="rounded-2xl border-2 border-red-100 bg-red-50 p-6 text-base font-black text-red-700 shadow-sm">{error}</div>
-      ) : isLoading || !modulesLoaded ? (
-        <div className="flex items-center justify-center gap-3 rounded-[2rem] border-2 border-[#dbeafe] bg-[#e8f5ff]/95 p-20 text-base font-black text-slate-400 shadow-sm animate-pulse uppercase tracking-widest">
-          <RefreshCw size={24} className="animate-spin text-[#d4a300]" /> กำลังโหลดข้อมูล...
-        </div>
-      ) : (
-        <>
-          <div className="mb-10 grid grid-cols-1 gap-8 xl:grid-cols-[280px_minmax(0,1fr)_minmax(0,1fr)]">
-            <section className="grid grid-cols-1 gap-4">
-              <StatCard label="W11-1" value={gauges.w11_1 || 0} tone="blue" />
-              <div className="grid grid-cols-1 gap-4">
-                <ModernGauge value={gauges.empNorm} label="พนักงานปกติ" />
-                <ModernGauge value={gauges.empOT} label="ปกติ + OT" />
-              </div>
-            </section>
+      <AnimatePresence mode="wait">
+        {error ? (
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="rounded-2xl border-2 border-red-100 bg-red-50 p-6 text-base font-black text-red-700 shadow-sm flex items-center gap-3"
+          >
+            <AlertCircle className="text-red-500" /> {error}
+          </motion.div>
+        ) : isLoading || !modulesLoaded ? (
+          <motion.div 
+            key="loading"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="flex items-center justify-center gap-3 rounded-[2rem] border-2 border-[#dbeafe] bg-[#e8f5ff]/95 p-20 text-base font-black text-slate-400 shadow-sm uppercase tracking-widest animate-pulse"
+          >
+            <RefreshCw size={24} className="animate-spin text-[#d4a300]" /> กำลังโหลดข้อมูล...
+          </motion.div>
+        ) : (
+          <motion.div 
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+          >
+            <div className="mb-10 grid grid-cols-1 gap-8 xl:grid-cols-[280px_minmax(0,1fr)_minmax(0,1fr)]">
+              <section className="grid grid-cols-1 gap-4">
+                <StatCard label="W11-1" value={gauges.w11_1 || 0} tone="blue" />
+                <motion.div variants={itemVariants} className="grid grid-cols-1 gap-4">
+                  <ModernGauge value={gauges.empNorm} label="พนักงานปกติ" />
+                  <ModernGauge value={gauges.empOT} label="ปกติ + OT" />
+                </motion.div>
+              </section>
 
-            <section className="contents">
-              <div className="rounded-[2rem] border-b-4 border-[#b9dcff] bg-[#e8f5ff]/95 p-4 md:p-8 shadow-sm shadow-sky-100/60 relative overflow-hidden group hover:shadow-md transition-all">
-                <div className="mb-8 flex items-center justify-between gap-3">
-                  <h2 className="font-black text-[#4A4A49] uppercase text-xl md:text-3xl tracking-wide flex items-center gap-3">
-                    <div className="w-3 h-7 md:h-10 bg-[#ffe08a] rounded-full"></div>
-                    ปริมาณการซื้อ/จ้างหมวด
-                  </h2>
-                  <ClipboardList size={24} className="text-slate-300 group-hover:text-[#d4a300] transition-colors" />
-                </div>
-                <div className="grid grid-cols-1 items-center gap-6">
-                  {primaryChartData.length > 0 ? <HighchartsReact highcharts={Highcharts} options={chartOptions} /> : <div className="flex h-[280px] items-center justify-center rounded-2xl bg-slate-50 text-xs font-black text-slate-400 uppercase tracking-widest">No Graph Data</div>}
-                  <div className="overflow-hidden rounded-2xl border-2 border-[#cfe6f7]">
+              <section className="contents">
+                <motion.div variants={itemVariants} className="rounded-[2rem] border-b-4 border-[#b9dcff] bg-[#e8f5ff]/95 p-4 md:p-8 shadow-sm shadow-sky-100/60 relative overflow-hidden group hover:shadow-md transition-all">
+                  <div className="mb-8 flex items-center justify-between gap-3">
+                    <h2 className="font-black text-[#4A4A49] uppercase text-xl md:text-3xl tracking-wide flex items-center gap-3">
+                      <div className="w-3 h-7 md:h-10 bg-[#ffe08a] rounded-full"></div>
+                      ปริมาณการซื้อ/จ้างหมวด
+                    </h2>
+                    <ClipboardList size={24} className="text-slate-300 group-hover:text-[#d4a300] transition-colors" />
+                  </div>
+                  <div className="grid grid-cols-1 items-center gap-6">
+                    {primaryChartData.length > 0 ? <HighchartsReact highcharts={Highcharts} options={chartOptions} /> : <div className="flex h-[280px] items-center justify-center rounded-2xl bg-slate-50 text-xs font-black text-slate-400 uppercase tracking-widest">No Graph Data</div>}
+                    <div className="overflow-hidden rounded-2xl border-2 border-[#cfe6f7]">
+                      <table className="w-full text-center text-[13px] md:text-[15px] font-black text-slate-500">
+                        <thead className="bg-[#eef6ff]/90 text-slate-600 border-b-2 border-[#cfe6f7]">
+                          <tr>{summaryTableData.map((row, index) => <th key={`${row.col1}-${index}`} className="whitespace-nowrap p-4 uppercase tracking-normal">{row.col1 || '-'}</th>)}</tr>
+                        </thead>
+                        <tbody>
+                          <tr className="bg-[#fffdf7]/80 hover:bg-yellow-50/40 transition-colors">
+                            {summaryTableData.map((row, index) => <td key={`${row.col2}-${index}`} className="whitespace-nowrap p-4 text-[#4A4A49] text-lg md:text-xl font-black border-t border-[#cfe6f7]">{row.col2 || 0}</td>)}
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </motion.div>
+
+                <motion.div variants={itemVariants} className="rounded-[2rem] border-b-4 border-[#c7d7ff] bg-[#edf3ff]/95 p-4 md:p-8 shadow-sm shadow-sky-100/60 relative overflow-hidden group hover:shadow-md transition-all">
+                  <div className="mb-8 flex items-center justify-between gap-3">
+                    <h2 className="font-black text-[#4A4A49] uppercase text-xl md:text-3xl tracking-wide flex items-center gap-3">
+                      <div className="w-3 h-7 md:h-10 bg-[#f9a66c] rounded-full"></div>
+                      สถานะการซื้อจ้าง
+                    </h2>
+                    <CalendarDays size={24} className="text-slate-300 group-hover:text-orange-400 transition-colors" />
+                  </div>
+                  {hasSecondaryChartData ? (
+                    <div
+                      onClick={handleStatusChartPointer}
+                      className="cursor-pointer"
+                    >
+                      <HighchartsReact highcharts={Highcharts} options={equipChartOptions} />
+                    </div>
+                  ) : <div className="flex h-[280px] items-center justify-center rounded-2xl bg-slate-50 text-xs font-black text-slate-400 uppercase tracking-widest">No Graph Data</div>}
+                  <div className="mt-6 overflow-hidden rounded-2xl border-2 border-[#d7def8]">
                     <table className="w-full text-center text-[13px] md:text-[15px] font-black text-slate-500">
-                      <thead className="bg-[#eef6ff]/90 text-slate-600 border-b-2 border-[#cfe6f7]">
-                        <tr>{summaryTableData.map((row, index) => <th key={`${row.col1}-${index}`} className="whitespace-nowrap p-4 uppercase tracking-normal">{row.col1 || '-'}</th>)}</tr>
+                      <thead className="bg-[#f0f4ff]/90 text-slate-600 border-b-2 border-[#d7def8]">
+                        <tr>{secondTableData.map((row, index) => <th key={`${row.col1}-${index}`} className="whitespace-nowrap p-4 uppercase tracking-normal">{row.col1 || '-'}</th>)}</tr>
                       </thead>
                       <tbody>
-                        <tr className="bg-[#fffdf7]/80 hover:bg-yellow-50/40 transition-colors">
-                          {summaryTableData.map((row, index) => <td key={`${row.col2}-${index}`} className="whitespace-nowrap p-4 text-[#4A4A49] text-lg md:text-xl font-black border-t border-[#cfe6f7]">{row.col2 || 0}</td>)}
+                        <tr className="bg-[#fffdf7]/80 hover:bg-orange-50/40 transition-colors">
+                          {secondTableData.map((row, index) => (
+                            <td
+                              key={`${row.col2}-${index}`}
+                              onClick={() => row.col1 && setHoveredPurchaseStatus(row.col1)}
+                              className="whitespace-nowrap p-4 text-[#4A4A49] text-lg md:text-xl font-black border-t border-[#d7def8] cursor-pointer hover:bg-[#fff3cf] transition-colors"
+                            >
+                              {row.col2 || 0}
+                            </td>
+                          ))}
                         </tr>
                       </tbody>
                     </table>
                   </div>
+                </motion.div>
+              </section>
+            </div>
+
+            <motion.section variants={itemVariants} className="rounded-[2rem] border-b-4 border-[#b9dcff] bg-[#e8f5ff]/95 shadow-sm shadow-sky-100/60 overflow-hidden mb-10 group hover:shadow-md transition-all">
+              <div className="flex flex-col gap-4 border-b-2 border-[#cfe6f7] p-4 md:p-8 lg:flex-row lg:items-center lg:justify-between bg-[#f5fbff]/70">
+                <div>
+                  <h2 className="font-black text-[#4A4A49] uppercase text-xl md:text-3xl tracking-wide flex items-center gap-3">
+                    <div className="w-3 h-7 md:h-10 bg-[#5c607f] rounded-full"></div>
+                    รายละเอียดรายการจัดซื้อจัดจ้าง
+                  </h2>
+                  <p className="mt-2 text-[13px] font-black uppercase text-slate-500 tracking-wide">
+                    Summary Total: <span className="text-[#4A4A49]">{totalSummary}</span>
+                    <AnimatePresence>
+                      {hoveredPurchaseStatus && (
+                        <motion.span 
+                          initial={{ opacity: 0, x: -10 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          exit={{ opacity: 0, x: -10 }}
+                          className="ml-3 inline-flex rounded-lg bg-[#fff3cf] px-3 py-1 text-[#9a6700] border border-[#eecb70]"
+                        >
+                          แสดงเฉพาะ: {hoveredPurchaseStatus}
+                          <button
+                            type="button"
+                            onClick={() => setHoveredPurchaseStatus('')}
+                            className="ml-3 font-black text-[#7c4a00] hover:text-[#4A4A49]"
+                          >
+                            แสดงทั้งหมด
+                          </button>
+                        </motion.span>
+                      )}
+                    </AnimatePresence>
+                  </p>
+                </div>
+                <div className="flex flex-col gap-2 sm:flex-row">
+                  <div className="relative group/search">
+                    <Search size={18} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within/search:text-[#d4a300] transition-colors" strokeWidth={3} />
+                    <input
+                      className="h-12 w-full rounded-2xl border-2 border-[#cfe6f7] bg-[#fffdf7] pl-12 pr-4 text-base font-bold text-[#4A4A49] outline-none focus:border-[#ffe08a] sm:w-80 shadow-sm transition-all"
+                      value={query}
+                      onChange={(e) => setQuery(e.target.value)}
+                      placeholder="SEARCH ECM, W/O, ITEMS..."
+                    />
+                  </div>
                 </div>
               </div>
 
-              <div className="rounded-[2rem] border-b-4 border-[#c7d7ff] bg-[#edf3ff]/95 p-4 md:p-8 shadow-sm shadow-sky-100/60 relative overflow-hidden group hover:shadow-md transition-all">
-                <div className="mb-8 flex items-center justify-between gap-3">
-                  <h2 className="font-black text-[#4A4A49] uppercase text-xl md:text-3xl tracking-wide flex items-center gap-3">
-                    <div className="w-3 h-7 md:h-10 bg-[#f9a66c] rounded-full"></div>
-                    สถานะการซื้อจ้าง
-                  </h2>
-                  <CalendarDays size={24} className="text-slate-300 group-hover:text-orange-400 transition-colors" />
-                </div>
-                {hasSecondaryChartData ? (
-                  <div
-                    onClick={handleStatusChartPointer}
-                    className="cursor-pointer"
-                  >
-                    <HighchartsReact highcharts={Highcharts} options={equipChartOptions} />
-                  </div>
-                ) : <div className="flex h-[280px] items-center justify-center rounded-2xl bg-slate-50 text-xs font-black text-slate-400 uppercase tracking-widest">No Graph Data</div>}
-                <div className="mt-6 overflow-hidden rounded-2xl border-2 border-[#d7def8]">
-                  <table className="w-full text-center text-[13px] md:text-[15px] font-black text-slate-500">
-                    <thead className="bg-[#f0f4ff]/90 text-slate-600 border-b-2 border-[#d7def8]">
-                      <tr>{secondTableData.map((row, index) => <th key={`${row.col1}-${index}`} className="whitespace-nowrap p-4 uppercase tracking-normal">{row.col1 || '-'}</th>)}</tr>
-                    </thead>
-                    <tbody>
-                      <tr className="bg-[#fffdf7]/80 hover:bg-orange-50/40 transition-colors">
-                        {secondTableData.map((row, index) => (
-                          <td
-                            key={`${row.col2}-${index}`}
-                            onClick={() => row.col1 && setHoveredPurchaseStatus(row.col1)}
-                            className="whitespace-nowrap p-4 text-[#4A4A49] text-lg md:text-xl font-black border-t border-[#d7def8] cursor-pointer hover:bg-[#fff3cf] transition-colors"
-                          >
-                            {row.col2 || 0}
-                          </td>
+              <div className="overflow-x-auto">
+                  <table className="w-full min-w-[1200px] text-left text-[15px] border-collapse border border-[#cfe6f7]">
+                    <thead className="bg-[#eef6ff]/90 text-[12px] font-black uppercase tracking-wide text-slate-500">
+                      <tr>
+                        {['ECM ซื้อจ้าง', 'ECM', 'W/O', 'รายการ', 'Equip', 'Date เข้า', 'Date เริ่มงาน', 'Date ออกงาน', 'สถานะ', 'การดำเนินการ'].map((header) => (
+                          <th key={header} className="px-6 py-5 font-black border border-[#cfe6f7]">{header}</th>
                         ))}
                       </tr>
+                    </thead>
+                    <tbody className="">
+                      {filteredRows.length > 0 ? filteredRows.map((row, index) => (
+                        <motion.tr 
+                          key={`${row.ecm_buy}-${row.wo}-${index}`} 
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          transition={{ delay: index * 0.005 }}
+                          className="bg-[#fffdf7]/60 hover:bg-yellow-50/50 transition-colors"
+                        >
+                          <td className="px-6 py-5 font-black text-[#4A4A49] border border-[#cfe6f7]">{row.ecm_buy || '-'}</td>
+                          <td className="px-6 py-5 font-bold text-slate-600 border border-[#cfe6f7]">{row.ecm || '-'}</td>
+                          <td className="px-6 py-5 font-bold text-slate-600 border border-[#cfe6f7]">{row.wo || '-'}</td>
+                          <td className="max-w-[400px] px-6 py-5 font-bold text-[#4A4A49] leading-relaxed border border-[#cfe6f7]">{row.item || '-'}</td>
+                          <td className="px-6 py-5 font-black text-slate-600 border border-[#cfe6f7]">{row.equip || '-'}</td>
+                          <td className="px-6 py-5 font-bold text-slate-600 whitespace-nowrap border border-[#cfe6f7]">{row.date_in || '-'}</td>
+                          <td className="px-6 py-5 font-bold text-slate-600 whitespace-nowrap border border-[#cfe6f7]">{row.date_start || '-'}</td>
+                          <td className="px-6 py-5 font-bold text-slate-600 whitespace-nowrap border border-[#cfe6f7]">{row.date_out || '-'}</td>
+                          <td className="px-6 py-5 border border-[#cfe6f7]">
+                            <span className={`inline-flex rounded-lg px-3 py-1.5 text-[12px] font-black uppercase tracking-wide shadow-sm ${getStatusStyle(row.status)}`}>{row.status || '-'}</span>
+                          </td>
+                          <td className="px-6 py-5 font-bold text-slate-600 border border-[#cfe6f7]">{row.action || '-'}</td>
+                        </motion.tr>
+                      )) : (
+                        <tr>
+                          <td className="px-6 py-20 text-center text-sm font-black text-slate-400 uppercase tracking-widest border border-[#cfe6f7]" colSpan={10}>No data found matching your filters</td>
+                        </tr>
+                      )}
                     </tbody>
                   </table>
                 </div>
-              </div>
-            </section>
-          </div>
-
-          <section className="rounded-[2rem] border-b-4 border-[#b9dcff] bg-[#e8f5ff]/95 shadow-sm shadow-sky-100/60 overflow-hidden mb-10 group hover:shadow-md transition-all">
-            <div className="flex flex-col gap-4 border-b-2 border-[#cfe6f7] p-4 md:p-8 lg:flex-row lg:items-center lg:justify-between bg-[#f5fbff]/70">
-              <div>
-                <h2 className="font-black text-[#4A4A49] uppercase text-xl md:text-3xl tracking-wide flex items-center gap-3">
-                  <div className="w-3 h-7 md:h-10 bg-[#5c607f] rounded-full"></div>
-                  รายละเอียดรายการจัดซื้อจัดจ้าง
-                </h2>
-                <p className="mt-2 text-[13px] font-black uppercase text-slate-500 tracking-wide">
-                  Summary Total: <span className="text-[#4A4A49]">{totalSummary}</span>
-                  {hoveredPurchaseStatus && (
-                    <span className="ml-3 inline-flex rounded-lg bg-[#fff3cf] px-3 py-1 text-[#9a6700] border border-[#eecb70]">
-                      แสดงเฉพาะ: {hoveredPurchaseStatus}
-                      <button
-                        type="button"
-                        onClick={() => setHoveredPurchaseStatus('')}
-                        className="ml-3 font-black text-[#7c4a00] hover:text-[#4A4A49]"
-                      >
-                        แสดงทั้งหมด
-                      </button>
-                    </span>
-                  )}
-                </p>
-              </div>
-              <div className="flex flex-col gap-2 sm:flex-row">
-                <div className="relative group/search">
-                  <Search size={18} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within/search:text-[#d4a300] transition-colors" strokeWidth={3} />
-                  <input
-                    className="h-12 w-full rounded-2xl border-2 border-[#cfe6f7] bg-[#fffdf7] pl-12 pr-4 text-base font-bold text-[#4A4A49] outline-none focus:border-[#ffe08a] sm:w-80 shadow-sm transition-all"
-                    value={query}
-                    onChange={(e) => setQuery(e.target.value)}
-                    placeholder="SEARCH ECM, W/O, ITEMS..."
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div className="overflow-x-auto">
-                <table className="w-full min-w-[1200px] text-left text-[15px] border-collapse border border-[#cfe6f7]">
-                  <thead className="bg-[#eef6ff]/90 text-[12px] font-black uppercase tracking-wide text-slate-500">
-                    <tr>
-                      {['ECM ซื้อจ้าง', 'ECM', 'W/O', 'รายการ', 'Equip', 'Date เข้า', 'Date เริ่มงาน', 'Date ออกงาน', 'สถานะ', 'การดำเนินการ'].map((header) => (
-                        <th key={header} className="px-6 py-5 font-black border border-[#cfe6f7]">{header}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody className="">
-                    {filteredRows.length > 0 ? filteredRows.map((row, index) => (
-                      <tr key={`${row.ecm_buy}-${row.wo}-${index}`} className="bg-[#fffdf7]/60 hover:bg-yellow-50/50 transition-colors">
-                        <td className="px-6 py-5 font-black text-[#4A4A49] border border-[#cfe6f7]">{row.ecm_buy || '-'}</td>
-                        <td className="px-6 py-5 font-bold text-slate-600 border border-[#cfe6f7]">{row.ecm || '-'}</td>
-                        <td className="px-6 py-5 font-bold text-slate-600 border border-[#cfe6f7]">{row.wo || '-'}</td>
-                        <td className="max-w-[400px] px-6 py-5 font-bold text-[#4A4A49] leading-relaxed border border-[#cfe6f7]">{row.item || '-'}</td>
-                        <td className="px-6 py-5 font-black text-slate-600 border border-[#cfe6f7]">{row.equip || '-'}</td>
-                        <td className="px-6 py-5 font-bold text-slate-600 whitespace-nowrap border border-[#cfe6f7]">{row.date_in || '-'}</td>
-                        <td className="px-6 py-5 font-bold text-slate-600 whitespace-nowrap border border-[#cfe6f7]">{row.date_start || '-'}</td>
-                        <td className="px-6 py-5 font-bold text-slate-600 whitespace-nowrap border border-[#cfe6f7]">{row.date_out || '-'}</td>
-                        <td className="px-6 py-5 border border-[#cfe6f7]">
-                          <span className={`inline-flex rounded-lg px-3 py-1.5 text-[12px] font-black uppercase tracking-wide shadow-sm ${getStatusStyle(row.status)}`}>{row.status || '-'}</span>
-                        </td>
-                        <td className="px-6 py-5 font-bold text-slate-600 border border-[#cfe6f7]">{row.action || '-'}</td>
-                      </tr>
-                    )) : (
-                      <tr>
-                        <td className="px-6 py-20 text-center text-sm font-black text-slate-400 uppercase tracking-widest border border-[#cfe6f7]" colSpan={10}>No data found matching your filters</td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-          </section>
-        </>
-      )}
+            </motion.section>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

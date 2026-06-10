@@ -107,7 +107,7 @@ const parseOtRows = (rows: any[][], type: 'employee' | 'contractor') => {
   return { title, people };
 };
 
-const parseOtErrorRows = (rows: any[][], type: 'employee' | 'contractor') => {
+const parseOtErrorRows = (rows: any[][], type: 'employee' | 'contractor', nameGroupMap?: Map<string, string>) => {
   const people = rows
     .map((row) => {
       // index 0 = Column B (ลำดับ)
@@ -116,29 +116,25 @@ const parseOtErrorRows = (rows: any[][], type: 'employee' | 'contractor') => {
 
       const isEmployee = type === 'employee';
       // หน้า Check OT Error: 
-      // พนักงาน: Column F (index 4) คือวันที่ 1, ID=C(1), Name=D(2), Pos=E(3)
-      // ลูกจ้าง: Column E (index 3) คือวันที่ 1, ID=C(1), Name=D(2)
-      const dayStartIndex = isEmployee ? 4 : 3;
+      // พนักงาน: คอลัมน์ F (index 4) คือวันที่ 1, ID=C(1), ชื่อ=D(2), ตำแหน่ง=E(3)
+      // ลูกจ้าง: คอลัมน์ F (index 4) คือวันที่ 1, ID=D(2), ชื่อ=E(3) (อ้างอิงจากการดัมพ์ข้อมูลจริง)
+      const dayStartIndex = 4;
       const days = Array.from({ length: 31 }, (_, index) => {
         const cell = row[index + dayStartIndex]?.toString()?.trim() || '';
         return cell === 'TRUE';
       });
       const total = toNumber(row[row.length - 1]);
 
-      const groupVal = row[1]?.toString()?.trim() || '';
-      const mappedGroup = mapGroupValue(groupVal);
+      const name = (isEmployee ? row[2] : row[3])?.toString()?.trim() || '';
       const groupFromSeq = getGroup(sequence, isEmployee);
-
-      // สำหรับลูกจ้างในหน้า Error คอลัมน์ C (index 1) คือ ID ไม่ใช่กลุ่ม 
-      // ดังนั้นต้องใช้ group จาก sequence (groupFromSeq) เท่านั้น
-      const group = isEmployee
-        ? (otGroups.includes(mappedGroup) ? mappedGroup : groupFromSeq)
-        : groupFromSeq;
+      
+      // ใช้ชื่อที่ Trim แล้วค้นหาใน Map เพื่อความแม่นยำ
+      const group = nameGroupMap?.get(name) || groupFromSeq;
 
       return {
         sequence,
-        employeeId: row[1]?.toString() || '',
-        name: row[2]?.toString() || '',
+        employeeId: (isEmployee ? row[1] : row[2])?.toString() || '',
+        name,
         position: isEmployee ? row[3]?.toString() || '' : '',
         group,
         days,
@@ -184,6 +180,13 @@ export async function GET() {
     const employees = employeeData.people;
     const contractors = contractorData.people;
 
+    // สร้าง Map ชื่อ -> กลุ่ม เพื่อให้หน้า Error แสดงกลุ่มตรงกับหน้าสรุป (ใช้ trim() เพื่อความแม่นยำ)
+    const employeeNameMap = new Map<string, string>();
+    employees.forEach(p => employeeNameMap.set(p.name.trim(), p.group));
+    
+    const contractorNameMap = new Map<string, string>();
+    contractors.forEach(p => contractorNameMap.set(p.name.trim(), p.group));
+
     // หาแถว "ยอดรวมสุทธิ" ของลูกจ้างจากข้อมูลดิบ
     const contractorSummaryRow = contractorRows.find(row => 
       row.some(cell => cell?.toString().includes('ยอดรวมสุทธิ'))
@@ -202,8 +205,8 @@ export async function GET() {
       };
     }
 
-    const employeeErrors = employeeErrorRows ? parseOtErrorRows(employeeErrorRows, 'employee') : [];
-    const contractorErrors = contractorErrorRows ? parseOtErrorRows(contractorErrorRows, 'contractor') : [];
+    const employeeErrors = employeeErrorRows ? parseOtErrorRows(employeeErrorRows, 'employee', employeeNameMap) : [];
+    const contractorErrors = contractorErrorRows ? parseOtErrorRows(contractorErrorRows, 'contractor', contractorNameMap) : [];
 
     const groupSummary = GROUP_BY_SEQUENCE.map(({ group }) => {
       const employee = summarizeGroup(group, employees);
