@@ -1,11 +1,13 @@
 'use client';
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { ArrowLeft, CalendarDays, ChevronDown, ClipboardList, Clock, Filter, RefreshCw, Search, ShoppingCart, ShoppingBag, Package, Truck, CreditCard, AlertCircle } from 'lucide-react';
 import Highcharts from 'highcharts';
 import HighchartsReact from 'highcharts-react-official';
 import { Cell, Pie, PieChart, ResponsiveContainer } from 'recharts';
 import { motion, AnimatePresence, Variants } from 'framer-motion';
+import Image from 'next/image';
+import Link from 'next/link';
 
 type GaugeData = { empNorm?: number; empOT?: number; w11_1?: number; };
 type NameValue = { name: string; value: number; };
@@ -15,7 +17,7 @@ type PurchasingData = { gauges?: GaugeData; chartData?: NameValue[]; summaryTabl
 
 const chartColors = ['#fde68a', '#fdba74', '#93c5fd', '#86efac', '#c4b5fd', '#f9a8d4', '#67e8f9', '#fca5a5'];
 
-const containerVariants = {
+const containerVariants: Variants = {
   hidden: { opacity: 0 },
   visible: {
     opacity: 1,
@@ -23,7 +25,7 @@ const containerVariants = {
   }
 };
 
-const itemVariants = {
+const itemVariants: Variants = {
   hidden: { opacity: 0, y: 20 },
   visible: {
     opacity: 1,
@@ -122,8 +124,18 @@ export default function PurchasingPage() {
   const [error, setError] = useState('');
   const [menuOpen, setMenuOpen] = useState(false);
 
+  const loadData = useCallback((y: string | null, m: string | null, isInitial = false) => {
+    setIsLoading(true);
+    setError('');
+    const params = new URLSearchParams();
+    if (y) params.append("year", y);
+    if (m) params.append("month", m);
+    fetch(`/api/purchasing?${params.toString()}`, { cache: 'no-store' }).then((res) => { if (!res.ok) throw new Error('โหลดข้อมูลจัดซื้อไม่สำเร็จ'); return res.json(); }).then((payload: PurchasingData) => { if (payload.error) throw new Error(payload.error); setData(payload); if (isInitial) { if (payload.currentYear) setYear(payload.currentYear); if (payload.currentMonth) setMonth(payload.currentMonth === 'รวมทุกเดือน' ? 'all' : payload.currentMonth); } }).catch((err: Error) => { setError(err.message); }).finally(() => setIsLoading(false));
+  }, []);
+
   useEffect(() => {
     import('highcharts/highcharts-3d').then(() => setModulesLoaded(true)).catch(() => setModulesLoaded(true));
+    
     let savedYear = null;
     let savedMonth = null;
     try {
@@ -132,19 +144,12 @@ export default function PurchasingPage() {
     } catch (e) {
       console.error('LocalStorage read error:', e);
     }
+    
     if (savedYear) setYear(savedYear);
     if (savedMonth) setMonth(savedMonth);
+    
     loadData(savedYear, savedMonth, true);
-  }, []);
-
-  const loadData = (y: string | null, m: string | null, isInitial = false) => {
-    setIsLoading(true);
-    setError('');
-    const params = new URLSearchParams();
-    if (y) params.append("year", y);
-    if (m) params.append("month", m);
-    fetch(`/api/purchasing?${params.toString()}`, { cache: 'no-store' }).then((res) => { if (!res.ok) throw new Error('โหลดข้อมูลจัดซื้อไม่สำเร็จ'); return res.json(); }).then((payload: PurchasingData) => { if (payload.error) throw new Error(payload.error); setData(payload); if (isInitial) { if (payload.currentYear) setYear(payload.currentYear); if (payload.currentMonth) setMonth(payload.currentMonth === 'รวมทุกเดือน' ? 'all' : payload.currentMonth); } }).catch((err: Error) => { setError(err.message); }).finally(() => setIsLoading(false));
-  };
+  }, [loadData]);
 
   const handleYearChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const val = e.target.value;
@@ -179,24 +184,27 @@ export default function PurchasingPage() {
   const secondTableData = data?.secondTableData || [];
   const purchaseList = data?.purchaseList || [];
 
-  const normalizeStatus = (value: string) => value
+  const normalizeStatus = useCallback((value: string) => value
     .toString()
     .trim()
     .replace(/^\d+\s*[.)]\s*/, '')
     .replace(/\s+/g, '')
-    .toLowerCase();
+    .toLowerCase(), []);
 
-  const isSameStatus = (left: string, right: string) => {
+  const isSameStatus = useCallback((left: string, right: string) => {
     const normalizedLeft = normalizeStatus(left);
     const normalizedRight = normalizeStatus(right);
 
     return !!normalizedLeft && !!normalizedRight && (normalizedLeft === normalizedRight || normalizedLeft.includes(normalizedRight) || normalizedRight.includes(normalizedLeft));
-  };
+  }, [normalizeStatus]);
 
   const statusOptions = useMemo(() => { const statuses = purchaseList.map((row) => row.status).filter(Boolean); return ['all', ...Array.from(new Set(statuses))]; }, [purchaseList]);
-  const primaryChartData = chartData.map((item) => ({ name: item.name || '-', y: item.value || 0 })).filter((item) => item.y > 0);
-  const chartHasSelectedStatus = !!hoveredPurchaseStatus && secondChartData.some((item) => isSameStatus(item.name || '', hoveredPurchaseStatus));
-  const secondaryChartData = secondChartData
+  
+  const primaryChartData = useMemo(() => chartData.map((item) => ({ name: item.name || '-', y: item.value || 0 })).filter((item) => item.y > 0), [chartData]);
+  
+  const chartHasSelectedStatus = useMemo(() => !!hoveredPurchaseStatus && secondChartData.some((item) => isSameStatus(item.name || '', hoveredPurchaseStatus)), [hoveredPurchaseStatus, secondChartData, isSameStatus]);
+  
+  const secondaryChartData = useMemo(() => secondChartData
     .map((item, index) => {
       const statusName = item.name || '-';
       const isSelected = chartHasSelectedStatus && isSameStatus(statusName, hoveredPurchaseStatus);
@@ -224,8 +232,10 @@ export default function PurchasingPage() {
         },
       };
     })
-    .filter((item) => item.name !== '-');
+    .filter((item) => item.name !== '-'), [secondChartData, chartHasSelectedStatus, hoveredPurchaseStatus, isSameStatus]);
+
   const hasSecondaryChartData = secondaryChartData.length > 0;
+  
   const filteredRows = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
     const normalizedHoveredStatus = normalizeStatus(hoveredPurchaseStatus);
@@ -237,7 +247,7 @@ export default function PurchasingPage() {
       const matchesQuery = !normalizedQuery || Object.values(row).some((value) => value?.toString().toLowerCase().includes(normalizedQuery));
       return matchesStatus && matchesHoveredStatus && matchesQuery;
     });
-  }, [hoveredPurchaseStatus, purchaseList, query, statusFilter]);
+  }, [hoveredPurchaseStatus, purchaseList, query, statusFilter, normalizeStatus]);
 
   const handleStatusChartPointer = (event: React.MouseEvent<HTMLDivElement>) => {
     if (secondaryChartData.length === 0) return;
@@ -276,8 +286,9 @@ export default function PurchasingPage() {
     return 'bg-[#FFD100] text-[#4A4A49]'; // default
   };
 
-  const chartOptions = { chart: { type: 'pie', backgroundColor: 'transparent', options3d: { enabled: true, alpha: 45 }, height: 300 }, colors: chartColors, credits: { enabled: false }, title: { text: '' }, plotOptions: { pie: { innerSize: '58%', depth: 38, colorByPoint: true, dataLabels: { enabled: true, format: '{point.name}: {point.percentage:.0f}%', style: { fontWeight: '800', textOutline: 'none', color: '#4b5563' } } } }, series: [{ name: 'Purchasing', data: primaryChartData }] };
-  const equipChartOptions = {
+  const chartOptions = useMemo(() => ({ chart: { type: 'pie', backgroundColor: 'transparent', options3d: { enabled: true, alpha: 45 }, height: 300 }, colors: chartColors, credits: { enabled: false }, title: { text: '' }, plotOptions: { pie: { innerSize: '58%', depth: 38, colorByPoint: true, dataLabels: { enabled: true, format: '{point.name}: {point.percentage:.0f}%', style: { fontWeight: '800', textOutline: 'none', color: '#4b5563' } } } }, series: [{ name: 'Purchasing', data: primaryChartData }] }), [primaryChartData]);
+  
+  const equipChartOptions = useMemo(() => ({
     chart: { type: 'column', backgroundColor: 'transparent', options3d: { enabled: true, alpha: 8, beta: 12, depth: 45 }, height: 300 },
     credits: { enabled: false },
     title: { text: '' },
@@ -330,8 +341,9 @@ export default function PurchasingPage() {
       },
     },
     series: [{ name: 'จำนวน', data: secondaryChartData }],
-  };
-  const totalSummary = summaryTableData.reduce((sum, row) => sum + (parseFloat(row.col2?.toString().replace(/[^0-9.-]/g, '')) || 0), 0);
+  }), [secondaryChartData]);
+
+  const totalSummary = useMemo(() => summaryTableData.reduce((sum, row) => sum + (parseFloat(row.col2?.toString().replace(/[^0-9.-]/g, '')) || 0), 0), [summaryTableData]);
 
   return (
     <div className="min-h-screen bg-[#e2e2e2] p-4 text-slate-900 md:p-8 font-sans">
@@ -352,7 +364,7 @@ export default function PurchasingPage() {
             <div>
               <h1 className="text-3xl md:text-4xl font-black uppercase tracking-tight text-[#4A4A49] flex items-center gap-3">
                 การจัดซื้อจัดจ้าง
-                <img src="/picture/First-Photoroom.png" alt="Purchasing Icon" className="w-12 h-12 md:w-16 md:h-16 object-contain" />
+                <Image src="/picture/First-Photoroom.png" alt="Purchasing Icon" width={64} height={64} className="w-12 h-12 md:w-16 md:h-16 object-contain" priority />
               </h1>
               <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mt-0.5">EGAT Procurement Summary</p>
             </div>
@@ -413,15 +425,15 @@ export default function PurchasingPage() {
                   exit={{ opacity: 0, y: 10, scale: 0.95 }}
                   className="absolute right-0 top-full z-20 mt-2 w-64 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl shadow-slate-300/40"
                 >
-                  <a href="/" className="flex items-center gap-3 px-4 py-3 text-sm font-black text-[#4A4A49] hover:bg-slate-50">
+                  <Link href="/" className="flex items-center gap-3 px-4 py-3 text-sm font-black text-[#4A4A49] hover:bg-slate-50">
                     <ArrowLeft size={18} className="text-slate-500" /> หน้าหลัก
-                  </a>
-                  <a href="/purchasing" className="flex items-center gap-3 border-t border-slate-100 px-4 py-3 text-sm font-black text-[#4A4A49] hover:bg-yellow-50">
+                  </Link>
+                  <Link href="/purchasing" className="flex items-center gap-3 border-t border-slate-100 px-4 py-3 text-sm font-black text-[#4A4A49] hover:bg-yellow-50">
                     <ShoppingCart size={18} className="text-[#d4a300]" /> จัดซื้อจัดจ้าง
-                  </a>
-                  <a href="/ot-summary" className="flex items-center gap-3 border-t border-slate-100 px-4 py-3 text-sm font-black text-[#4A4A49] hover:bg-sky-50">
+                  </Link>
+                  <Link href="/ot-summary" className="flex items-center gap-3 border-t border-slate-100 px-4 py-3 text-sm font-black text-[#4A4A49] hover:bg-sky-50">
                     <Clock size={18} className="text-sky-500" /> สรุปโอทีลูกจ้างและพนักงาน
-                  </a>
+                  </Link>
                 </motion.div>
               )}
             </AnimatePresence>

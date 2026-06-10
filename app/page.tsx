@@ -1,11 +1,12 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Activity, AlertCircle, CheckCircle2, ChevronDown, Clock, Factory, HardHat, Info, LayoutDashboard, RefreshCw, Shield, ShoppingCart, Zap } from 'lucide-react';
 import Highcharts from 'highcharts';
 import HighchartsReact from 'highcharts-react-official';
-import { ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { motion, AnimatePresence, Variants } from 'framer-motion';
+import Image from 'next/image';
+import Link from 'next/link';
 
 const containerVariants: Variants = {
   hidden: { opacity: 0 },
@@ -51,11 +52,14 @@ const GroupBlock = ({ name, stats, themeColor, isSummary = false, imgSrc }: any)
       
       <div className="flex items-center gap-1.5 sm:gap-2.5 mb-4 z-10">
         {imgSrc ? (
-          <img 
-            src={imgSrc} 
-            alt={name} 
-            className="w-9 h-9 sm:w-11 sm:h-11 rounded-full object-cover border-2 border-white shadow-sm shrink-0"
-          />
+          <div className="relative w-9 h-9 sm:w-11 sm:h-11 shrink-0">
+            <Image 
+              src={imgSrc} 
+              alt={name} 
+              fill
+              className="rounded-full object-cover border-2 border-white shadow-sm"
+            />
+          </div>
         ) : (
           <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-slate-200/80 border-2 border-dashed border-slate-300 flex items-center justify-center text-[10px] text-slate-400 font-bold leading-none shrink-0 text-center">
             ใส่รูป
@@ -136,7 +140,7 @@ export default function DashboardPage() {
   const [error, setError] = useState("");
   const [menuOpen, setMenuOpen] = useState(false);
 
-  const loadDashboard = (y: string | null, m: string | null, isInitial = false) => {
+  const loadDashboard = useCallback((y: string | null, m: string | null, isInitial = false) => {
     setError("");
     setIsLoading(true);
     const params = new URLSearchParams();
@@ -153,10 +157,11 @@ export default function DashboardPage() {
       }
     }).catch((err: Error) => setError(err.message))
     .finally(() => setIsLoading(false));
-  };
+  }, []);
 
   useEffect(() => { 
     import('highcharts/highcharts-3d').then(() => setModulesLoaded(true)).catch(() => setModulesLoaded(true));
+    
     let savedYear = null;
     let savedMonth = null;
     try {
@@ -165,10 +170,12 @@ export default function DashboardPage() {
     } catch (e) {
       console.error('LocalStorage read error:', e);
     }
+    
     if (savedYear) setYear(savedYear);
     if (savedMonth) setMonth(savedMonth);
+    
     loadDashboard(savedYear, savedMonth, true);
-  }, []);
+  }, [loadDashboard]);
 
   const handleYearChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const val = e.target.value;
@@ -210,7 +217,7 @@ export default function DashboardPage() {
 
   const { wGauges = {}, groupStats = {}, w_all = {}, statusData = {}, equipmentData = [] } = data || {};
 
-  const statusChartOptions = {
+  const statusChartOptions = useMemo(() => ({
     chart: { type: 'pie', height: 440, backgroundColor: 'transparent', options3d: { enabled: true, alpha: 45 } },
     title: { text: '' },
     credits: { enabled: false },
@@ -221,9 +228,9 @@ export default function DashboardPage() {
         { name: 'Pending', y: statusData?.pending || 0, color: '#fca5a5' },
         { name: 'Finish', y: statusData?.finish || 0, color: '#fde68a' }
     ] }]
-  };
+  }), [statusData]);
 
-  const equipChartOptions = {
+  const equipChartOptions = useMemo(() => ({
     chart: { type: 'column', height: 400, backgroundColor: 'transparent', options3d: { enabled: true, alpha: 10, beta: 20, depth: 50 } },
     title: { text: '' },
     credits: { enabled: false },
@@ -248,7 +255,7 @@ export default function DashboardPage() {
         data: e.values, 
         color: (({'BEML': '#93c5fd', 'Conveyor': '#fca5a5', 'สูบน้ำ': '#fcd34d', 'Moblie other': '#6ee7b7', 'Mobile other': '#6ee7b7', 'power plant': '#fdba74', 'General': '#c4b5fd'} as any)[e.name] || '#cbd5e1')
     }))
-  };
+  }), [equipmentData]);
 
   const totalWO = statusData?.total || 1;
   const sapPct = Math.round(((statusData?.sap || 0) / totalWO) * 100);
@@ -266,15 +273,15 @@ export default function DashboardPage() {
         <div className="flex items-center gap-4 md:gap-6">
           <div className="flex flex-col">
             <h1 className="text-xl md:text-3xl font-black tracking-tight text-[#4A4A49] uppercase flex items-center gap-2 md:gap-3">
-              <img src="/picture/egat.png" alt="EGAT Logo" className="w-10 h-10 md:w-14 md:h-14 object-contain" />
+              <Image src="/picture/egat.png" alt="EGAT Logo" width={56} height={56} className="w-10 h-10 md:w-14 md:h-14 object-contain" priority />
               W10 Dashboard
-              <img src="/picture/รูปภาพ14-Photoroom.png" alt="W10 Icon" className="w-10 h-10 md:w-14 md:h-14 object-contain" />
+              <Image src="/picture/รูปภาพ14-Photoroom.png" alt="W10 Icon" width={56} height={56} className="w-10 h-10 md:w-14 md:h-14 object-contain" priority />
             </h1>
             <p className="text-[10px] md:text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">EGAT Maintenance Dashboard</p>
           </div>
         </div>
         <div className="flex flex-wrap items-center justify-center gap-3">
-            <img src="/picture/saksit-Photoroom.png" alt="Saksit Logo" className="h-8 md:h-10 object-contain mr-2" />
+            <Image src="/picture/saksit-Photoroom.png" alt="Saksit Logo" width={40} height={40} className="h-8 md:h-10 w-auto object-contain mr-2" />
             <AnimatePresence>
               {isLoading && (
                 <motion.span 
@@ -327,12 +334,12 @@ export default function DashboardPage() {
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 10, scale: 0.95 }}
                   >
-                    <a href="/purchasing" className="flex items-center gap-3 px-4 py-3 text-sm font-black text-[#4A4A49] hover:bg-yellow-50">
+                    <Link href="/purchasing" className="flex items-center gap-3 px-4 py-3 text-sm font-black text-[#4A4A49] hover:bg-yellow-50">
                       <ShoppingCart size={18} className="text-[#d4a300]" /> จัดซื้อจัดจ้าง
-                    </a>
-                    <a href="/ot-summary" className="flex items-center gap-3 border-t border-slate-100 px-4 py-3 text-sm font-black text-[#4A4A49] hover:bg-sky-50">
+                    </Link>
+                    <Link href="/ot-summary" className="flex items-center gap-3 border-t border-slate-100 px-4 py-3 text-sm font-black text-[#4A4A49] hover:bg-sky-50">
                       <Clock size={18} className="text-sky-500" /> สรุปโอทีลูกจ้างและพนักงาน
-                    </a>
+                    </Link>
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -363,9 +370,9 @@ export default function DashboardPage() {
                 <div className="flex items-center justify-between mb-6 md:mb-8">
                   <h3 className="font-black text-[#4A4A49] uppercase text-xl md:text-3xl tracking-wide flex items-center gap-3">
                     <div className="w-3 h-7 md:h-10 bg-[#ffe08a] rounded-full"></div>
-                    <img src="/picture/Jacko-Photoroom.png" alt="Jacko Logo" className="h-8 md:h-11 object-contain mr-1" />
+                    <Image src="/picture/Jacko-Photoroom.png" alt="Jacko Logo" width={44} height={44} className="h-8 md:h-11 w-auto object-contain mr-1" />
                     จำนวน W/O เข้าจากระบบ
-                    <img src="/picture/s-sap-erp.png" alt="SAP Logo" className="h-6 md:h-9 ml-1 md:ml-2 object-contain" />
+                    <Image src="/picture/s-sap-erp.png" alt="SAP Logo" width={36} height={36} className="h-6 md:h-9 w-auto ml-1 md:ml-2 object-contain" />
                   </h3>
                   <Info className="text-slate-300 w-4 h-4 md:w-5 h-5 cursor-help" />
                 </div>
@@ -533,10 +540,10 @@ export default function DashboardPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-10">
               {[
-                  { id: 'W11', color: 'yellow', icon: <img src="/picture/w11.png" alt="W11" className="w-12 h-12 object-contain" /> }, 
-                  { id: 'W12', color: 'green', icon: <img src="/picture/w12.png" alt="W12" className="w-12 h-12 object-contain" /> }, 
-                  { id: 'W13', color: 'pink', icon: <img src="/picture/w13.png" alt="W13" className="w-12 h-12 object-contain" /> }, 
-                  { id: 'W14', color: 'blue', icon: <img src="/picture/w14.png" alt="W14" className="w-12 h-12 object-contain" /> }
+                  { id: 'W11', color: 'yellow', icon: <Image src="/picture/w11.png" alt="W11" width={48} height={48} className="w-12 h-12 object-contain" /> }, 
+                  { id: 'W12', color: 'green', icon: <Image src="/picture/w12.png" alt="W12" width={48} height={48} className="w-12 h-12 object-contain" /> }, 
+                  { id: 'W13', color: 'pink', icon: <Image src="/picture/w13.png" alt="W13" width={48} height={48} className="w-12 h-12 object-contain" /> }, 
+                  { id: 'W14', color: 'blue', icon: <Image src="/picture/w14.png" alt="W14" width={48} height={48} className="w-12 h-12 object-contain" /> }
               ].map((w) => (
                 <motion.div 
                   key={w.id} 
