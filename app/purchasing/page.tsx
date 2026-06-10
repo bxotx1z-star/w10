@@ -5,7 +5,7 @@ import { ArrowLeft, CalendarDays, ChevronDown, ClipboardList, Clock, Filter, Ref
 import Highcharts from 'highcharts';
 import HighchartsReact from 'highcharts-react-official';
 import { Cell, Pie, PieChart, ResponsiveContainer } from 'recharts';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, Variants } from 'framer-motion';
 
 type GaugeData = { empNorm?: number; empOT?: number; w11_1?: number; };
 type NameValue = { name: string; value: number; };
