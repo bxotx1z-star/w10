@@ -43,7 +43,7 @@ const mapGroupValue = (val: string) => {
   return val;
 };
 
-const parseOtRows = (rows: any[][], type: 'employee' | 'contractor') => {
+const parseOtRows = (rows: (string | number | boolean | null | undefined)[][], type: 'employee' | 'contractor') => {
   // หาชื่อหัวข้อจากแถวแรกๆ (มักจะเป็นหัวตารางรวม)
   const title = rows.flat().find((cell) => cell?.toString().trim())?.toString() || (type === 'employee' ? 'สรุป OT พนักงาน' : 'สรุป OT ลูกจ้าง');
 
@@ -107,7 +107,7 @@ const parseOtRows = (rows: any[][], type: 'employee' | 'contractor') => {
   return { title, people };
 };
 
-const parseOtErrorRows = (rows: any[][], type: 'employee' | 'contractor', nameGroupMap?: Map<string, string>) => {
+const parseOtErrorRows = (rows: (string | number | boolean | null | undefined)[][], type: 'employee' | 'contractor', nameGroupMap?: Map<string, string>) => {
   const people = rows
     .map((row) => {
       // index 0 = Column B (ลำดับ)
@@ -117,15 +117,15 @@ const parseOtErrorRows = (rows: any[][], type: 'employee' | 'contractor', nameGr
       const isEmployee = type === 'employee';
       // หน้า Check OT Error: 
       // พนักงาน: คอลัมน์ F (index 4) คือวันที่ 1, ID=C(1), ชื่อ=D(2), ตำแหน่ง=E(3)
-      // ลูกจ้าง: คอลัมน์ F (index 4) คือวันที่ 1, ID=D(2), ชื่อ=E(3) (อ้างอิงจากการดัมพ์ข้อมูลจริง)
-      const dayStartIndex = 4;
+      // ลูกจ้าง: คอลัมน์ E (index 3) คือวันที่ 1, ID=C(1), ชื่อ=D(2)
+      const dayStartIndex = isEmployee ? 4 : 3;
       const days = Array.from({ length: 31 }, (_, index) => {
         const cell = row[index + dayStartIndex]?.toString()?.trim() || '';
         return cell === 'TRUE';
       });
       const total = toNumber(row[row.length - 1]);
 
-      const name = (isEmployee ? row[2] : row[3])?.toString()?.trim() || '';
+      const name = row[2]?.toString()?.trim() || '';
       const groupFromSeq = getGroup(sequence, isEmployee);
       
       // ใช้ชื่อที่ Trim แล้วค้นหาใน Map เพื่อความแม่นยำ
@@ -133,7 +133,7 @@ const parseOtErrorRows = (rows: any[][], type: 'employee' | 'contractor', nameGr
 
       return {
         sequence,
-        employeeId: (isEmployee ? row[1] : row[2])?.toString() || '',
+        employeeId: row[1]?.toString() || '',
         name,
         position: isEmployee ? row[3]?.toString() || '' : '',
         group,
@@ -146,7 +146,7 @@ const parseOtErrorRows = (rows: any[][], type: 'employee' | 'contractor', nameGr
   return people;
 };
 
-const summarizeGroup = (group: string, people: any[]) => {
+const summarizeGroup = (group: string, people: { group: string; total: number; total2: number }[]) => {
   const groupRows = people.filter((person) => person.group === group);
   const total = groupRows.reduce((sum, person) => sum + person.total, 0);
   const total2 = groupRows.reduce((sum, person) => sum + person.total2, 0);
@@ -182,10 +182,14 @@ export async function GET() {
 
     // สร้าง Map ชื่อ -> กลุ่ม เพื่อให้หน้า Error แสดงกลุ่มตรงกับหน้าสรุป (ใช้ trim() เพื่อความแม่นยำ)
     const employeeNameMap = new Map<string, string>();
-    employees.forEach(p => employeeNameMap.set(p.name.trim(), p.group));
+    employees.forEach(p => {
+      if (p && p.name) employeeNameMap.set(p.name.trim(), p.group);
+    });
     
     const contractorNameMap = new Map<string, string>();
-    contractors.forEach(p => contractorNameMap.set(p.name.trim(), p.group));
+    contractors.forEach(p => {
+      if (p && p.name) contractorNameMap.set(p.name.trim(), p.group);
+    });
 
     // หาแถว "ยอดรวมสุทธิ" ของลูกจ้างจากข้อมูลดิบ
     const contractorSummaryRow = contractorRows.find(row => 
@@ -226,11 +230,11 @@ export async function GET() {
     });
 
     const employeeDailyTotals = Array.from({ length: 31 }, (_, index) => (
-      employees.reduce((sum: number, employee: any) => sum + employee.days[index], 0)
+      employees.reduce((sum: number, employee: { days: number[] }) => sum + employee.days[index], 0)
     ));
 
     const contractorDailyTotals = Array.from({ length: 31 }, (_, index) => (
-      contractors.reduce((sum: number, contractor: any) => sum + contractor.days[index], 0)
+      contractors.reduce((sum: number, contractor: { days: number[] }) => sum + contractor.days[index], 0)
     ));
 
     return NextResponse.json({
