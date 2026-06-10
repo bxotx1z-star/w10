@@ -118,9 +118,11 @@ const THAI_MONTHS = [
   { value: '12', label: 'ธ.ค.' }
 ];
 
+const DEFAULT_YEAR = "2025";
+
 export default function PurchasingPage() {
   const [data, setData] = useState<PurchasingData | null>(null);
-  const [year, setYear] = useState("2025");
+  const [year, setYear] = useState(DEFAULT_YEAR);
   const [month, setMonth] = useState("all");
   const [hoveredPurchaseStatus, setHoveredPurchaseStatus] = useState('');
   const [query, setQuery] = useState('');
@@ -152,17 +154,11 @@ export default function PurchasingPage() {
   useEffect(() => {
     import('highcharts/highcharts-3d').then(() => setModulesLoaded(true)).catch(() => setModulesLoaded(true));
     
-    let savedYear = null;
-    let savedMonth = null;
-    try {
-      savedYear = localStorage.getItem('dashboard_year');
-      savedMonth = localStorage.getItem('dashboard_month');
-    } catch (e) {
-      console.error('LocalStorage read error:', e);
-    }
+    let savedYear = localStorage.getItem('dashboard_year') || DEFAULT_YEAR;
+    let savedMonth = localStorage.getItem('dashboard_month') || "all";
     
-    if (savedYear) setYear(savedYear);
-    if (savedMonth) setMonth(savedMonth);
+    setYear(savedYear);
+    setMonth(savedMonth);
     
     loadData(savedYear, savedMonth, true);
   }, [loadData]);
@@ -193,7 +189,7 @@ export default function PurchasingPage() {
     loadData(year, month);
   };
 
-  const { gauges = {}, chartData = [], summaryTableData = [], secondChartData = [], secondTableData = [], purchaseList = [] } = data || {};
+  const { chartData = [], summaryTableData = [], secondChartData = [], secondTableData = [], purchaseList = [], gauges = {} } = data || {};
 
   const normalizeStatus = useCallback((value: string) => value
     .toString()

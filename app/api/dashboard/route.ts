@@ -4,6 +4,21 @@ import { getDashboardData, updateDashboardFilters } from '@/lib/googleSheet';
 export const dynamic = 'force-dynamic';
 export const fetchCache = 'force-no-store';
 
+interface GroupStats {
+  entrance: number;
+  left: number;
+  finish: number;
+  otherFinish: number;
+  out: number;
+}
+
+interface WGauge {
+  empNorm: number;
+  conNorm: number;
+  empOT: number;
+  conOT: number;
+}
+
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
@@ -71,7 +86,7 @@ export async function GET(request: Request) {
       getNum(0, 35), // W14 Entrance (AJ)
     ];
 
-    const groupStats: any = {
+    const groupStats: Record<string, GroupStats> = {
       W11: { entrance: groupEntrances[0], left: getNum(1, 23), finish: getNum(2, 23), otherFinish: getNum(3, 23), out: getNum(4, 23) },
       W12: { entrance: groupEntrances[1], left: getNum(1, 27), finish: getNum(2, 27), otherFinish: getNum(3, 27), out: getNum(4, 27) },
       W13: { entrance: groupEntrances[2], left: getNum(1, 31), finish: getNum(2, 31), otherFinish: getNum(3, 31), out: getNum(4, 31) },
@@ -94,7 +109,7 @@ export async function GET(request: Request) {
       out: groupStats.W11.out + groupStats.W12.out + groupStats.W13.out + groupStats.W14.out,
     };
 
-    const wGauges: any = {
+    const wGauges: Record<string, WGauge> = {
       W11: { empNorm: getNum(1, 81), conNorm: getNum(1, 82), empOT: getNum(2, 81), conOT: getNum(2, 82) },
       W12: { empNorm: getNum(5, 81), conNorm: getNum(5, 82), empOT: getNum(6, 81), conOT: getNum(6, 82) },
       W13: { empNorm: getNum(7, 81), conNorm: getNum(7, 82), empOT: getNum(8, 81), conOT: getNum(8, 82) },

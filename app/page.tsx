@@ -59,7 +59,7 @@ const GroupBlock: React.FC<GroupBlockProps> = ({ name, stats, themeColor, isSumm
   return (
     <motion.div 
       variants={itemVariants}
-      whileHover={{ y: -5, shadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)' }}
+      whileHover={{ y: -5, boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)' }}
       className={`flex flex-col rounded-3xl p-3.5 sm:p-5 ${colors[themeColor]} border shadow-sm relative overflow-hidden transition-all h-full cursor-default`}
     >
       {iconMap[name] || iconMap['W_all']}
@@ -161,9 +161,11 @@ interface DashboardData {
   error?: string;
 }
 
+const DEFAULT_YEAR = "2025";
+
 export default function DashboardPage() {
   const [data, setData] = useState<DashboardData | null>(null);
-  const [year, setYear] = useState("2025");
+  const [year, setYear] = useState(DEFAULT_YEAR);
   const [month, setMonth] = useState("all");
   const [modulesLoaded, setModulesLoaded] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -192,18 +194,11 @@ export default function DashboardPage() {
   useEffect(() => { 
     import('highcharts/highcharts-3d').then(() => setModulesLoaded(true)).catch(() => setModulesLoaded(true));
     
-    let savedYear = null;
-    let savedMonth = null;
-    try {
-      savedYear = localStorage.getItem('dashboard_year');
-      savedMonth = localStorage.getItem('dashboard_month');
-    } catch (e) {
-      console.error('LocalStorage read error:', e);
-    }
+    const savedYear = localStorage.getItem('dashboard_year') || DEFAULT_YEAR;
+    const savedMonth = localStorage.getItem('dashboard_month') || "all";
     
-    if (savedYear) setYear(savedYear);
-    if (savedMonth) setMonth(savedMonth);
-    
+    // We only call setYear/setMonth if they are different from current state to minimize renders,
+    // but better to just use the values for the first data fetch.
     loadDashboard(savedYear, savedMonth, true);
   }, [loadDashboard]);
 
@@ -271,7 +266,7 @@ export default function DashboardPage() {
     series: (equipmentData).filter((e) => e.name !== 'All').map((e) => ({
         name: e.name, 
         data: e.values, 
-        color: (({'BEML': '#93c5fd', 'Conveyor': '#fca5a5', 'สูบน้ำ': '#fcd34d', 'Moblie other': '#6ee7b7', 'Mobile other': '#6ee7b7', 'power plant': '#fdba74', 'General': '#c4b5fd'} as any)[e.name] || '#cbd5e1')
+        color: (({'BEML': '#93c5fd', 'Conveyor': '#fca5a5', 'สูบน้ำ': '#fcd34d', 'Moblie other': '#6ee7b7', 'Mobile other': '#6ee7b7', 'power plant': '#fdba74', 'General': '#c4b5fd'} as Record<string, string>)[e.name] || '#cbd5e1')
     }))
   }), [equipmentData]);
 
@@ -538,7 +533,7 @@ export default function DashboardPage() {
                                 </tr>
                             </thead>
                             <tbody className="bg-white/50">
-                                {(equipmentData).map((e, idx: number) => (
+                                {(equipmentData as { name: string; values: number[]; total: number }[]).map((e, idx: number) => (
                                     <motion.tr 
                                       key={e.name} 
                                       initial={{ opacity: 0 }}
