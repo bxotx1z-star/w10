@@ -62,12 +62,13 @@ export async function GET(request: Request) {
       });
     }
 
-    const allEquipmentRow = equipmentData.find((e) => e.name === 'All');
-    const groupEntrances = allEquipmentRow?.values || [
-      getNum(0, 23),
-      getNum(0, 27),
-      getNum(0, 31),
-      getNum(0, 35),
+    // แก้ไข: ใช้ค่าจากแถวที่ 0 (Row 1 ในชีท) ซึ่งเป็น "รวมเข้าเดือนนี้" 
+    // แทนที่จะใช้จากแถว "All" ใน equipmentData เพราะค่าอาจจะไม่ตรงกัน (เช่น W11)
+    const groupEntrances = [
+      getNum(0, 23), // W11 Entrance (X)
+      getNum(0, 27), // W12 Entrance (AB)
+      getNum(0, 31), // W13 Entrance (AF)
+      getNum(0, 35), // W14 Entrance (AJ)
     ];
 
     const groupStats: any = {

@@ -20,7 +20,12 @@ envContent.split('\n').forEach(line => {
 
 const clientEmail = env['GOOGLE_CLIENT_EMAIL'];
 const privateKey = env['GOOGLE_PRIVATE_KEY'];
-const sheetId = env['GOOGLE_SHEET_ID'];
+const sheetId = env['GOOGLE_OT_CONTRACTOR_SHEET_ID'];
+
+if (!clientEmail || !privateKey || !sheetId) {
+  console.error('Missing Google Sheets environment variables');
+  process.exit(1);
+}
 
 let sanitizedKey = privateKey;
 const keyStart = sanitizedKey.indexOf('-----BEGIN PRIVATE KEY-----');
@@ -40,30 +45,21 @@ const sheets = google.sheets({
   auth,
 });
 
-async function main() {
+async function dumpContractorError() {
   try {
-    const spreadsheet = await sheets.spreadsheets.get({
+    const response = await sheets.spreadsheets.values.get({
       spreadsheetId: sheetId,
+      range: "'Check OT Error'!A1:AO5",
     });
-    console.log("Sheet names:", spreadsheet.data.sheets.map(s => s.properties.title));
 
-    // Read from 'Dashboard W10 All info'
-    const res = await sheets.spreadsheets.values.get({
-      spreadsheetId: sheetId,
-      range: "'Dashboard W10 All info'!A1:CZ20",
-    });
-    
-    const values = res.data.values || [];
-    console.log("Reading first 20 rows of Dashboard W10 All info (Cols 70-85):");
-    values.forEach((row, i) => {
-      // Print indices to help mapping
-      if (row.length > 0) {
-        console.log(`Row ${i}:`, row.map((v, colIdx) => `[${colIdx}] ${v}`).slice(70, 85)); 
-      }
+    console.log('Contractor OT Error Headers and first few rows:');
+    const rows = response.data.values || [];
+    rows.forEach((row, i) => {
+      console.log(`Row ${i}:`, row.map((cell, j) => `[${j}] ${cell}`).join(' | '));
     });
   } catch (err) {
-    console.error('Error:', err);
+    console.error(err);
   }
 }
 
-main();
+dumpContractorError();

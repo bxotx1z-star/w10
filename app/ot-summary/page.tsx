@@ -36,6 +36,7 @@ type OtSummaryData = {
   contractors?: EmployeeOtRow[];
   employeeErrors?: OtErrorRow[];
   contractorErrors?: OtErrorRow[];
+  officialContractorTotals?: typeof emptyContractorTotals;
   error?: string;
 };
 
@@ -86,11 +87,17 @@ const getContractorTotals = (rows: EmployeeOtRow[]) => rows.reduce(
   { ...emptyContractorTotals },
 );
 
+/**
+ * renderEmployeeTable: แสดงตารางสรุป OT สำหรับพนักงาน (Staff)
+ * @param rows ข้อมูลพนักงานแต่ละคน
+ * @param group ชื่อกลุ่ม (W11-W14 หรือ ALL)
+ */
 const renderEmployeeTable = (rows: EmployeeOtRow[], group: string) => {
   const isAll = group === 'ALL-EMPLOYEES';
   return (
     <div className="overflow-x-auto">
       <table className={`w-full ${isAll ? 'min-w-[1400px]' : 'min-w-[800px] xl:min-w-0'} table-fixed border-collapse border border-[#21324a] text-center text-[10px] md:text-[11px]`}>
+        {/* กำหนดความกว้างของแต่ละคอลัมน์ */}
         <colgroup>
           <col className="w-[30px]" />
           <col className="w-[55px]" />
@@ -139,9 +146,16 @@ const renderEmployeeTable = (rows: EmployeeOtRow[], group: string) => {
   );
 };
 
+/**
+ * renderContractorTable: แสดงตารางสรุป OT สำหรับลูกจ้าง (Contractor)
+ * มีคอลัมน์เพิ่มเติมเกี่ยวกับอัตราค่าจ้าง (1เท่า, 1.5เท่า, 3เท่า)
+ * @param rows ข้อมูลลูกจ้าง
+ * @param totals ผลรวมท้ายตาราง
+ * @param group ชื่อกลุ่ม
+ */
 const renderContractorTable = (rows: EmployeeOtRow[], totals: typeof emptyContractorTotals, group: string) => (
   <div className="overflow-x-auto">
-    <table className="w-full min-w-[1360px] table-fixed border-collapse border border-[#21324a] text-center text-[11px]">
+    <table className="w-full min-w-[1400px] table-fixed border-collapse border border-[#21324a] text-center text-[11px]">
       <colgroup>
         <col className="w-[42px]" />
         <col className="w-[48px]" />
@@ -173,7 +187,7 @@ const renderContractorTable = (rows: EmployeeOtRow[], totals: typeof emptyContra
         {rows.map((contractor, index) => (
           <tr key={`${group}-${contractor.sequence}-${contractor.name}-${index}`} className={index % 2 === 0 ? 'bg-white' : 'bg-[#fce7f3]'}>
             <td className="border border-slate-700 px-0.5 py-1 font-bold">{contractor.sequence}</td>
-            <td className="border border-slate-700 px-0.5 py-1 font-black text-[#4A4A49]">{contractor.group}</td>
+            <td className="border border-slate-700 px-0.5 py-1 font-black text-[#4A4A49]">{contractor.employeeId}</td>
             <td className="truncate border border-slate-700 px-1 py-1 text-left font-bold" title={contractor.name}>{contractor.name}</td>
             {contractor.days.map((value, dayIndex) => (
               <td key={`${group}-${contractor.sequence}-${dayIndex}`} className="border border-slate-700 px-0.5 py-1 font-bold">
@@ -202,6 +216,12 @@ const renderContractorTable = (rows: EmployeeOtRow[], totals: typeof emptyContra
   </div>
 );
 
+/**
+ * renderOtErrorTable: แสดงตารางตรวจสอบข้อผิดพลาด (Check OT Error)
+ * ไฮไลท์สีแดงเมื่อพบข้อผิดพลาด (ค่าในชีทเป็น FALSE) และสีเขียวเมื่อถูกต้อง (TRUE)
+ * @param rows ข้อมูล Error ของแต่ละคน
+ * @param type ประเภท ('employee' หรือ 'contractor')
+ */
 const renderOtErrorTable = (rows: OtErrorRow[], type: 'employee' | 'contractor') => {
   const isEmployee = type === 'employee';
   return (
@@ -209,9 +229,9 @@ const renderOtErrorTable = (rows: OtErrorRow[], type: 'employee' | 'contractor')
       <table className="w-full min-w-[800px] table-fixed border-collapse border border-[#21324a] text-center text-[10px] md:text-[11px]">
         <colgroup>
           <col className="w-[30px]" />
-          <col className={isEmployee ? 'w-[55px]' : 'w-[65px]'} />
+          <col className="w-[65px]" />
           <col className="w-[125px]" />
-          {isEmployee && <col className="w-[38px]" />}
+          {isEmployee && <col className="w-[80px]" />}
           {Array.from({ length: 31 }, (_, index) => (
             <col key={`error-day-col-${index}`} className="w-[17px] md:w-[18px]" />
           ))}
@@ -224,7 +244,7 @@ const renderOtErrorTable = (rows: OtErrorRow[], type: 'employee' | 'contractor')
             </th>
           </tr>
           <tr>
-            {['ลำดับ', isEmployee ? 'เลขประจำตัว' : 'หมวด', 'ชื่อ', ...(isEmployee ? ['ตำแหน่ง'] : []), ...Array.from({ length: 31 }, (_, index) => `${index + 1}`), 'รวม'].map((header, index) => (
+            {['ลำดับ', 'เลขประจำตัว', 'ชื่อ', ...(isEmployee ? ['ตำแหน่ง'] : []), ...Array.from({ length: 31 }, (_, index) => `${index + 1}`), 'รวม'].map((header, index) => (
               <th key={`error-header-${header}-${index}`} className="border border-slate-700 bg-[#d9d9d9] px-0.5 py-1 font-black whitespace-nowrap">{header}</th>
             ))}
           </tr>
@@ -233,7 +253,7 @@ const renderOtErrorTable = (rows: OtErrorRow[], type: 'employee' | 'contractor')
           {rows.map((row, index) => (
             <tr key={`error-row-${row.sequence}-${index}`} className={index % 2 === 0 ? 'bg-white' : 'bg-[#fff5f5]'}>
               <td className="border border-slate-700 px-0.5 py-1 font-bold">{row.sequence}</td>
-              <td className="border border-slate-700 px-0.5 py-1 font-bold">{isEmployee ? row.employeeId : row.employeeId /* Actually category for contractor */}</td>
+              <td className="border border-slate-700 px-0.5 py-1 font-bold">{row.employeeId}</td>
               <td className="truncate border border-slate-700 px-1 py-1 text-left font-bold whitespace-nowrap" title={row.name}>{row.name}</td>
               {isEmployee && <td className="border border-slate-700 px-0.5 py-1 font-bold">{row.position}</td>}
               {row.days.map((isError, dayIndex) => (
@@ -437,7 +457,16 @@ export default function OtSummaryPage() {
                 <p className="mt-2 text-sm font-extrabold text-slate-600">{data.contractorTitle || 'สรุป OT ลูกจ้าง'} · ตารางรวมหลัง W14</p>
               </div>
               <div className="p-4 md:p-8">
-                {renderContractorTable(contractors, allContractorTotals, 'ALL-CONTRACTORS')}
+                {renderContractorTable(contractors, data.officialContractorTotals || allContractorTotals, 'ALL-CONTRACTORS')}
+                {contractorErrors.length > 0 && (
+                  <div className="mt-10">
+                    <h3 className="text-xl font-black text-red-600 mb-4 flex items-center gap-2">
+                      <div className="w-2 h-6 bg-red-500 rounded-full"></div>
+                      ตรวจสอบข้อผิดพลาด OT ลูกจ้าง (ทั้งหมด)
+                    </h3>
+                    {renderOtErrorTable(contractorErrors, 'contractor')}
+                  </div>
+                )}
               </div>
             </section>
           </div>
