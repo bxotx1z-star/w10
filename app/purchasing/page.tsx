@@ -1,10 +1,9 @@
 'use client';
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { ArrowLeft, CalendarDays, ChevronDown, ClipboardList, Clock, Filter, RefreshCw, Search, ShoppingCart, ShoppingBag, Package, Truck, CreditCard, AlertCircle } from 'lucide-react';
+import { ArrowLeft, CalendarDays, ChevronDown, ClipboardList, Clock, Filter, RefreshCw, Search, ShoppingCart, ShoppingBag, Package, Truck, AlertCircle } from 'lucide-react';
 import Highcharts from 'highcharts';
 import HighchartsReact from 'highcharts-react-official';
-import { Cell, Pie, PieChart, ResponsiveContainer } from 'recharts';
 import { motion, AnimatePresence, Variants } from 'framer-motion';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -36,7 +35,12 @@ const itemVariants: Variants = {
 
 import ReactSpeedometer from 'react-d3-speedometer';
 
-const ModernGauge = ({ value, label }: { value?: number; label: string }) => {
+interface ModernGaugeProps {
+  value?: number;
+  label: string;
+}
+
+const ModernGauge: React.FC<ModernGaugeProps> = ({ value, label }) => {
   const safeValue: number = typeof value === 'number' ? value : 0;
   const clampedValue = Math.min(Math.max(safeValue, -3), 3);
   
@@ -68,17 +72,19 @@ const ModernGauge = ({ value, label }: { value?: number; label: string }) => {
   );
 };
 
-const StatCard = ({ label, value, tone = 'slate' }: { label: string; value: string | number; tone?: 'blue' | 'emerald' | 'amber' | 'slate' }) => {
-  if (tone === 'emerald' || tone === 'amber') return null;
-  
+interface StatCardProps {
+  label: string;
+  value: string | number;
+  tone?: 'blue' | 'slate';
+}
+
+const StatCard: React.FC<StatCardProps> = ({ label, value, tone = 'slate' }) => {
   const toneClasses = { 
     blue: 'bg-[#fff7d6] text-slate-900 border-[#f6d77a]', 
-    emerald: 'bg-emerald-50 text-emerald-900 border-emerald-100', 
-    amber: 'bg-amber-50 text-amber-900 border-amber-100', 
     slate: 'bg-white text-slate-900 border-slate-200' 
   };
   
-  const iconMap: any = {
+  const iconMap: Record<string, React.ReactNode> = {
     'W11-1': <Truck className="absolute -right-2 -bottom-2 w-20 h-20 text-amber-500/10" />,
     'รายการทั้งหมด': <Package className="absolute -right-2 -bottom-2 w-20 h-20 text-emerald-500/10" />,
     'รายการที่แสดง': <ShoppingBag className="absolute -right-2 -bottom-2 w-20 h-20 text-orange-500/10" />
@@ -116,7 +122,6 @@ export default function PurchasingPage() {
   const [data, setData] = useState<PurchasingData | null>(null);
   const [year, setYear] = useState("2025");
   const [month, setMonth] = useState("all");
-  const [statusFilter, setStatusFilter] = useState('all');
   const [hoveredPurchaseStatus, setHoveredPurchaseStatus] = useState('');
   const [query, setQuery] = useState('');
   const [modulesLoaded, setModulesLoaded] = useState(false);
@@ -130,7 +135,18 @@ export default function PurchasingPage() {
     const params = new URLSearchParams();
     if (y) params.append("year", y);
     if (m) params.append("month", m);
-    fetch(`/api/purchasing?${params.toString()}`, { cache: 'no-store' }).then((res) => { if (!res.ok) throw new Error('โหลดข้อมูลจัดซื้อไม่สำเร็จ'); return res.json(); }).then((payload: PurchasingData) => { if (payload.error) throw new Error(payload.error); setData(payload); if (isInitial) { if (payload.currentYear) setYear(payload.currentYear); if (payload.currentMonth) setMonth(payload.currentMonth === 'รวมทุกเดือน' ? 'all' : payload.currentMonth); } }).catch((err: Error) => { setError(err.message); }).finally(() => setIsLoading(false));
+    fetch(`/api/purchasing?${params.toString()}`, { cache: 'no-store' })
+      .then((res) => { if (!res.ok) throw new Error('โหลดข้อมูลจัดซื้อไม่สำเร็จ'); return res.json(); })
+      .then((payload: PurchasingData) => { 
+        if (payload.error) throw new Error(payload.error); 
+        setData(payload); 
+        if (isInitial) { 
+          if (payload.currentYear) setYear(payload.currentYear); 
+          if (payload.currentMonth) setMonth(payload.currentMonth === 'รวมทุกเดือน' ? 'all' : payload.currentMonth); 
+        } 
+      })
+      .catch((err: Error) => { setError(err.message); })
+      .finally(() => setIsLoading(false));
   }, []);
 
   useEffect(() => {
@@ -177,12 +193,7 @@ export default function PurchasingPage() {
     loadData(year, month);
   };
 
-  const gauges = data?.gauges || {};
-  const chartData = data?.chartData || [];
-  const summaryTableData = data?.summaryTableData || [];
-  const secondChartData = data?.secondChartData || [];
-  const secondTableData = data?.secondTableData || [];
-  const purchaseList = data?.purchaseList || [];
+  const { gauges = {}, chartData = [], summaryTableData = [], secondChartData = [], secondTableData = [], purchaseList = [] } = data || {};
 
   const normalizeStatus = useCallback((value: string) => value
     .toString()
@@ -198,8 +209,6 @@ export default function PurchasingPage() {
     return !!normalizedLeft && !!normalizedRight && (normalizedLeft === normalizedRight || normalizedLeft.includes(normalizedRight) || normalizedRight.includes(normalizedLeft));
   }, [normalizeStatus]);
 
-  const statusOptions = useMemo(() => { const statuses = purchaseList.map((row) => row.status).filter(Boolean); return ['all', ...Array.from(new Set(statuses))]; }, [purchaseList]);
-  
   const primaryChartData = useMemo(() => chartData.map((item) => ({ name: item.name || '-', y: item.value || 0 })).filter((item) => item.y > 0), [chartData]);
   
   const chartHasSelectedStatus = useMemo(() => !!hoveredPurchaseStatus && secondChartData.some((item) => isSameStatus(item.name || '', hoveredPurchaseStatus)), [hoveredPurchaseStatus, secondChartData, isSameStatus]);
@@ -242,12 +251,11 @@ export default function PurchasingPage() {
 
     return purchaseList.filter((row) => {
       const normalizedRowStatus = normalizeStatus(row.status || '');
-      const matchesStatus = statusFilter === 'all' || row.status === statusFilter;
       const matchesHoveredStatus = !normalizedHoveredStatus || normalizedRowStatus === normalizedHoveredStatus || normalizedRowStatus.includes(normalizedHoveredStatus) || normalizedHoveredStatus.includes(normalizedRowStatus);
       const matchesQuery = !normalizedQuery || Object.values(row).some((value) => value?.toString().toLowerCase().includes(normalizedQuery));
-      return matchesStatus && matchesHoveredStatus && matchesQuery;
+      return matchesHoveredStatus && matchesQuery;
     });
-  }, [hoveredPurchaseStatus, purchaseList, query, statusFilter, normalizeStatus]);
+  }, [hoveredPurchaseStatus, purchaseList, query, normalizeStatus]);
 
   const handleStatusChartPointer = (event: React.MouseEvent<HTMLDivElement>) => {
     if (secondaryChartData.length === 0) return;
@@ -344,6 +352,18 @@ export default function PurchasingPage() {
   }), [secondaryChartData]);
 
   const totalSummary = useMemo(() => summaryTableData.reduce((sum, row) => sum + (parseFloat(row.col2?.toString().replace(/[^0-9.-]/g, '')) || 0), 0), [summaryTableData]);
+
+  if (error) return (
+    <div className="min-h-screen bg-[#e2e2e2] p-4 text-slate-900 md:p-8 font-sans flex items-center justify-center">
+      <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="rounded-2xl border-2 border-red-100 bg-red-50 p-10 text-center shadow-lg">
+        <AlertCircle className="text-red-500 mx-auto mb-4" size={48} />
+        <div className="text-2xl font-black text-red-700 mb-6">{error}</div>
+        <button onClick={() => loadData(year, month)} className="px-8 py-3 bg-slate-900 text-white rounded-2xl font-black hover:bg-slate-800 transition-all flex items-center gap-2 mx-auto">
+          <RefreshCw size={18} /> ลองใหม่อีกครั้ง
+        </button>
+      </motion.div>
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-[#e2e2e2] p-4 text-slate-900 md:p-8 font-sans">
@@ -442,15 +462,7 @@ export default function PurchasingPage() {
       </motion.header>
 
       <AnimatePresence mode="wait">
-        {error ? (
-          <motion.div 
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="rounded-2xl border-2 border-red-100 bg-red-50 p-6 text-base font-black text-red-700 shadow-sm flex items-center gap-3"
-          >
-            <AlertCircle className="text-red-500" /> {error}
-          </motion.div>
-        ) : isLoading || !modulesLoaded ? (
+        {isLoading || !modulesLoaded ? (
           <motion.div 
             key="loading"
             initial={{ opacity: 0 }}
@@ -462,6 +474,7 @@ export default function PurchasingPage() {
           </motion.div>
         ) : (
           <motion.div 
+            key="content"
             variants={containerVariants}
             initial="hidden"
             animate="visible"

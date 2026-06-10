@@ -25,8 +25,22 @@ const itemVariants: Variants = {
   }
 };
 
-const GroupBlock = ({ name, stats, themeColor, isSummary = false, imgSrc }: any) => {
-  const colors: any = { 
+interface GroupBlockProps {
+  name: string;
+  stats?: {
+    entrance?: number;
+    left?: number;
+    finish?: number;
+    otherFinish?: number;
+    out?: number;
+  };
+  themeColor: 'yellow' | 'green' | 'pink' | 'blue' | 'gray';
+  isSummary?: boolean;
+  imgSrc?: string;
+}
+
+const GroupBlock: React.FC<GroupBlockProps> = ({ name, stats, themeColor, isSummary = false, imgSrc }) => {
+  const colors = { 
     yellow: 'bg-gradient-to-br from-[#fff7d6] to-[#ffe8b8] border-[#f6d77a]', 
     green: 'bg-gradient-to-br from-[#ddf8ed] to-[#c7f1df] border-[#83dcb7]', 
     pink: 'bg-gradient-to-br from-[#ffe7ef] to-[#ffd6e1] border-[#f4a8bd]', 
@@ -34,7 +48,7 @@ const GroupBlock = ({ name, stats, themeColor, isSummary = false, imgSrc }: any)
     gray: 'bg-gradient-to-br from-[#f7f4ff] to-[#e9e2ff] border-[#c8b9f6]'
   };
   
-  const iconMap: any = {
+  const iconMap: Record<string, React.ReactNode> = {
     'W11': <Factory className="absolute -right-6 -bottom-6 w-32 h-32 text-amber-500/5 pointer-events-none" />,
     'W12': <Zap className="absolute -right-6 -bottom-6 w-32 h-32 text-emerald-500/5 pointer-events-none" />,
     'W13': <Shield className="absolute -right-6 -bottom-6 w-32 h-32 text-rose-500/5 pointer-events-none" />,
@@ -48,7 +62,7 @@ const GroupBlock = ({ name, stats, themeColor, isSummary = false, imgSrc }: any)
       whileHover={{ y: -5, shadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)' }}
       className={`flex flex-col rounded-3xl p-3.5 sm:p-5 ${colors[themeColor]} border shadow-sm relative overflow-hidden transition-all h-full cursor-default`}
     >
-      {iconMap[name]}
+      {iconMap[name] || iconMap['W_all']}
       
       <div className="flex items-center gap-1.5 sm:gap-2.5 mb-4 z-10">
         {imgSrc ? (
@@ -84,7 +98,12 @@ const GroupBlock = ({ name, stats, themeColor, isSummary = false, imgSrc }: any)
 
 import ReactSpeedometer from 'react-d3-speedometer';
 
-const ModernGauge = ({ value, label }: any) => {
+interface ModernGaugeProps {
+  value?: number;
+  label: string;
+}
+
+const ModernGauge: React.FC<ModernGaugeProps> = ({ value, label }) => {
   const safeValue: number = typeof value === 'number' ? value : 0;
   const clampedValue = Math.min(Math.max(safeValue, -3), 3);
   
@@ -131,8 +150,19 @@ const THAI_MONTHS = [
   { value: '12', label: 'ธ.ค.' }
 ];
 
+interface DashboardData {
+  currentYear?: string;
+  currentMonth?: string;
+  wGauges?: Record<string, { empNorm?: number; conNorm?: number; empOT?: number; conOT?: number }>;
+  groupStats?: Record<string, any>;
+  w_all?: { entrance?: number };
+  statusData?: { total?: number; sap?: number; pending?: number; finish?: number };
+  equipmentData?: { name: string; values: number[]; total: number }[];
+  error?: string;
+}
+
 export default function DashboardPage() {
-  const [data, setData] = useState<any>(null);
+  const [data, setData] = useState<DashboardData | null>(null);
   const [year, setYear] = useState("2025");
   const [month, setMonth] = useState("all");
   const [modulesLoaded, setModulesLoaded] = useState(false);
@@ -148,7 +178,7 @@ export default function DashboardPage() {
     if (m) params.append("month", m);
     
     fetch(`/api/dashboard?${params.toString()}`, { cache: 'no-store' }).then(async (res) => {
-      const d = await res.json();
+      const d: DashboardData = await res.json();
       if (!res.ok || d.error) throw new Error(d.error || 'โหลดข้อมูลไม่สำเร็จ');
       setData(d);
       if (isInitial) {
@@ -203,19 +233,7 @@ export default function DashboardPage() {
     loadDashboard(year, month);
   };
 
-  if (error) return (
-    <div className="p-10 text-center min-h-screen flex flex-col items-center justify-center bg-[#e2e2e2]">
-      <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="bg-white p-8 rounded-3xl shadow-xl border-b-4 border-red-500">
-        <AlertCircle size={48} className="text-red-500 mx-auto mb-4" />
-        <div className="font-black text-slate-800 text-2xl mb-4">{error}</div>
-        <button onClick={() => loadDashboard(year, month)} className="px-8 py-3 bg-slate-900 text-white rounded-2xl font-black hover:bg-slate-800 transition-all active:scale-95 flex items-center gap-2 mx-auto">
-          <RefreshCw size={18} /> ลองใหม่อีกครั้ง
-        </button>
-      </motion.div>
-    </div>
-  );
-
-  const { wGauges = {}, groupStats = {}, w_all = {}, statusData = {}, equipmentData = [] } = data || {};
+  const { statusData = {}, equipmentData = [], wGauges = {}, groupStats = {}, w_all = {} } = data || {};
 
   const statusChartOptions = useMemo(() => ({
     chart: { type: 'pie', height: 440, backgroundColor: 'transparent', options3d: { enabled: true, alpha: 45 } },
@@ -250,7 +268,7 @@ export default function DashboardPage() {
       lineWidth: 1,
     },
     plotOptions: { column: { borderRadius: 4, depth: 25, dataLabels: { enabled: true } } },
-    series: equipmentData.filter((e: any) => e.name !== 'All').map((e: any) => ({
+    series: (equipmentData).filter((e) => e.name !== 'All').map((e) => ({
         name: e.name, 
         data: e.values, 
         color: (({'BEML': '#93c5fd', 'Conveyor': '#fca5a5', 'สูบน้ำ': '#fcd34d', 'Moblie other': '#6ee7b7', 'Mobile other': '#6ee7b7', 'power plant': '#fdba74', 'General': '#c4b5fd'} as any)[e.name] || '#cbd5e1')
@@ -261,6 +279,18 @@ export default function DashboardPage() {
   const sapPct = Math.round(((statusData?.sap || 0) / totalWO) * 100);
   const pendingPct = Math.round(((statusData?.pending || 0) / totalWO) * 100);
   const finishPct = Math.round(((statusData?.finish || 0) / totalWO) * 100);
+
+  if (error) return (
+    <div className="p-10 text-center min-h-screen flex flex-col items-center justify-center bg-[#e2e2e2]">
+      <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="bg-white p-8 rounded-3xl shadow-xl border-b-4 border-red-500">
+        <AlertCircle size={48} className="text-red-500 mx-auto mb-4" />
+        <div className="font-black text-slate-800 text-2xl mb-4">{error}</div>
+        <button onClick={() => loadDashboard(year, month)} className="px-8 py-3 bg-slate-900 text-white rounded-2xl font-black hover:bg-slate-800 transition-all active:scale-95 flex items-center gap-2 mx-auto">
+          <RefreshCw size={18} /> ลองใหม่อีกครั้ง
+        </button>
+      </motion.div>
+    </div>
+  );
 
   return (
     <div className="p-4 md:p-8 bg-[#e2e2e2] min-h-screen text-slate-800 font-sans">
@@ -468,10 +498,10 @@ export default function DashboardPage() {
             </motion.h3>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-6 md:mb-8">
               {[
-                { id: 'W11', name: 'W11', color: 'yellow', imgSrc: '/picture/chanwit-Photoroom.png' },
-                { id: 'W12', name: 'W12', color: 'green', imgSrc: '/picture/saman-Photoroom.png' },
-                { id: 'W13', name: 'W13', color: 'pink', imgSrc: '/picture/sitiporn-Photoroom.png' },
-                { id: 'W14', name: 'W14', color: 'blue', imgSrc: '/picture/wutisak-Photoroom.png' }
+                { id: 'W11', name: 'W11', color: 'yellow' as const, imgSrc: '/picture/chanwit-Photoroom.png' },
+                { id: 'W12', name: 'W12', color: 'green' as const, imgSrc: '/picture/saman-Photoroom.png' },
+                { id: 'W13', name: 'W13', color: 'pink' as const, imgSrc: '/picture/sitiporn-Photoroom.png' },
+                { id: 'W14', name: 'W14', color: 'blue' as const, imgSrc: '/picture/wutisak-Photoroom.png' }
               ].map((w) => (
                 <GroupBlock key={w.id} name={w.name} stats={groupStats[w.id]} themeColor={w.color} imgSrc={w.imgSrc} />
               ))}
@@ -508,7 +538,7 @@ export default function DashboardPage() {
                                 </tr>
                             </thead>
                             <tbody className="bg-white/50">
-                                {equipmentData.map((e: any, idx: number) => (
+                                {(equipmentData).map((e, idx: number) => (
                                     <motion.tr 
                                       key={e.name} 
                                       initial={{ opacity: 0 }}
