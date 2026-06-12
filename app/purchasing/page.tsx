@@ -13,6 +13,14 @@ type NameValue = { name: string; value: number; };
 type PairRow = { col1: string; col2: string | number; };
 type PurchaseRow = { ecm_buy: string; ecm: string; wo: string; item: string; equip: string; date_in: string; date_start: string; date_out: string; status: string; action: string; };
 type PurchasingData = { gauges?: GaugeData; chartData?: NameValue[]; summaryTableData?: PairRow[]; secondChartData?: NameValue[]; secondTableData?: PairRow[]; purchaseList?: PurchaseRow[]; currentYear?: string; currentMonth?: string; error?: string; };
+type ChartPointContext = {
+  category?: string;
+  name?: string;
+  options?: { custom?: { statusName?: string } };
+  point?: { category?: string; custom?: { statusName?: string }; name?: string };
+  x?: unknown;
+  y?: unknown;
+};
 
 const chartColors = ['#fde68a', '#fdba74', '#93c5fd', '#86efac', '#c4b5fd', '#f9a8d4', '#67e8f9', '#fca5a5'];
 
@@ -154,8 +162,8 @@ export default function PurchasingPage() {
   useEffect(() => {
     import('highcharts/highcharts-3d').then(() => setModulesLoaded(true)).catch(() => setModulesLoaded(true));
     
-    let savedYear = localStorage.getItem('dashboard_year') || DEFAULT_YEAR;
-    let savedMonth = localStorage.getItem('dashboard_month') || "all";
+    const savedYear = localStorage.getItem('dashboard_year') || DEFAULT_YEAR;
+    const savedMonth = localStorage.getItem('dashboard_month') || "all";
     
     setYear(savedYear);
     setMonth(savedMonth);
@@ -231,7 +239,7 @@ export default function PurchasingPage() {
         },
         custom: { statusName, isSelected },
         events: {
-          click: function (this: any) {
+          click: function (this: ChartPointContext) {
             setHoveredPurchaseStatus(String(this.options?.custom?.statusName || this.name || ''));
           },
         },
@@ -302,7 +310,7 @@ export default function PurchasingPage() {
       borderRadius: 12,
       borderWidth: 2,
       shadow: true,
-      formatter: function (this: any) {
+      formatter: function (this: ChartPointContext) {
         const statusName = String(this.point?.custom?.statusName || this.x || this.point?.category || this.point?.name || '');
         return `<b>${statusName}</b><br/><span style="font-weight:800">${this.y}</span> รายการ`;
       },
@@ -315,7 +323,7 @@ export default function PurchasingPage() {
       series: {
         point: {
           events: {
-            click: function (this: any) {
+            click: function (this: ChartPointContext) {
               setHoveredPurchaseStatus(String(this.options?.custom?.statusName || this.category || this.name || ''));
             },
           },
@@ -330,7 +338,7 @@ export default function PurchasingPage() {
         dataLabels: { enabled: true, style: { color: '#4b5563', fontWeight: '800' } },
         point: {
           events: {
-            click: function (this: any) {
+            click: function (this: ChartPointContext) {
               setHoveredPurchaseStatus(String(this.options?.custom?.statusName || this.category || this.name || ''));
             },
           },
@@ -485,7 +493,7 @@ export default function PurchasingPage() {
               </section>
 
               <section className="contents">
-                <motion.div variants={itemVariants} className="rounded-[2rem] border-b-4 border-[#b9dcff] bg-[#e8f5ff]/95 p-4 md:p-8 shadow-sm shadow-sky-100/60 relative overflow-hidden group hover:shadow-md transition-all">
+                <motion.div variants={itemVariants} className="min-w-0 rounded-[2rem] border-b-4 border-[#b9dcff] bg-[#e8f5ff]/95 p-4 md:p-8 shadow-sm shadow-sky-100/60 relative overflow-hidden group hover:shadow-md transition-all">
                   <div className="mb-8 flex items-center justify-between gap-3">
                     <h2 className="font-black text-[#4A4A49] uppercase text-xl md:text-3xl tracking-wide flex items-center gap-3">
                       <div className="w-3 h-7 md:h-10 bg-[#ffe08a] rounded-full"></div>
@@ -495,14 +503,14 @@ export default function PurchasingPage() {
                   </div>
                   <div className="grid grid-cols-1 items-center gap-6">
                     {primaryChartData.length > 0 ? <HighchartsReact highcharts={Highcharts} options={chartOptions} /> : <div className="flex h-[280px] items-center justify-center rounded-2xl bg-slate-50 text-xs font-black text-slate-400 uppercase tracking-widest">No Graph Data</div>}
-                    <div className="overflow-hidden rounded-2xl border-2 border-[#cfe6f7]">
-                      <table className="w-full text-center text-[13px] md:text-[15px] font-black text-slate-500">
+                    <div className="max-w-full overflow-x-auto rounded-2xl border-2 border-[#cfe6f7]">
+                      <table className="w-full min-w-[620px] table-fixed text-center text-[12px] md:text-[13px] font-black text-slate-500">
                         <thead className="bg-[#eef6ff]/90 text-slate-600 border-b-2 border-[#cfe6f7]">
-                          <tr>{summaryTableData.map((row, index) => <th key={`${row.col1}-${index}`} className="whitespace-nowrap p-4 uppercase tracking-normal">{row.col1 || '-'}</th>)}</tr>
+                          <tr>{summaryTableData.map((row, index) => <th key={`${row.col1}-${index}`} className="break-words px-2 py-4 leading-tight uppercase tracking-normal">{row.col1 || '-'}</th>)}</tr>
                         </thead>
                         <tbody>
                           <tr className="bg-[#fffdf7]/80 hover:bg-yellow-50/40 transition-colors">
-                            {summaryTableData.map((row, index) => <td key={`${row.col2}-${index}`} className="whitespace-nowrap p-4 text-[#4A4A49] text-lg md:text-xl font-black border-t border-[#cfe6f7]">{row.col2 || 0}</td>)}
+                            {summaryTableData.map((row, index) => <td key={`${row.col2}-${index}`} className="whitespace-nowrap px-2 py-4 text-[#4A4A49] text-lg md:text-xl font-black border-t border-[#cfe6f7]">{row.col2 || 0}</td>)}
                           </tr>
                         </tbody>
                       </table>
@@ -510,7 +518,7 @@ export default function PurchasingPage() {
                   </div>
                 </motion.div>
 
-                <motion.div variants={itemVariants} className="rounded-[2rem] border-b-4 border-[#c7d7ff] bg-[#edf3ff]/95 p-4 md:p-8 shadow-sm shadow-sky-100/60 relative overflow-hidden group hover:shadow-md transition-all">
+                <motion.div variants={itemVariants} className="min-w-0 rounded-[2rem] border-b-4 border-[#c7d7ff] bg-[#edf3ff]/95 p-4 md:p-8 shadow-sm shadow-sky-100/60 relative overflow-hidden group hover:shadow-md transition-all">
                   <div className="mb-8 flex items-center justify-between gap-3">
                     <h2 className="font-black text-[#4A4A49] uppercase text-xl md:text-3xl tracking-wide flex items-center gap-3">
                       <div className="w-3 h-7 md:h-10 bg-[#f9a66c] rounded-full"></div>
@@ -526,10 +534,10 @@ export default function PurchasingPage() {
                       <HighchartsReact highcharts={Highcharts} options={equipChartOptions} />
                     </div>
                   ) : <div className="flex h-[280px] items-center justify-center rounded-2xl bg-slate-50 text-xs font-black text-slate-400 uppercase tracking-widest">No Graph Data</div>}
-                  <div className="mt-6 overflow-hidden rounded-2xl border-2 border-[#d7def8]">
-                    <table className="w-full text-center text-[13px] md:text-[15px] font-black text-slate-500">
+                  <div className="mt-6 max-w-full overflow-x-auto rounded-2xl border-2 border-[#d7def8]">
+                    <table className="w-full min-w-[620px] table-fixed text-center text-[12px] md:text-[13px] font-black text-slate-500">
                       <thead className="bg-[#f0f4ff]/90 text-slate-600 border-b-2 border-[#d7def8]">
-                        <tr>{secondTableData.map((row, index) => <th key={`${row.col1}-${index}`} className="whitespace-nowrap p-4 uppercase tracking-normal">{row.col1 || '-'}</th>)}</tr>
+                        <tr>{secondTableData.map((row, index) => <th key={`${row.col1}-${index}`} className="break-words px-2 py-4 leading-tight uppercase tracking-normal">{row.col1 || '-'}</th>)}</tr>
                       </thead>
                       <tbody>
                         <tr className="bg-[#fffdf7]/80 hover:bg-orange-50/40 transition-colors">
@@ -537,7 +545,7 @@ export default function PurchasingPage() {
                             <td
                               key={`${row.col2}-${index}`}
                               onClick={() => row.col1 && setHoveredPurchaseStatus(row.col1)}
-                              className="whitespace-nowrap p-4 text-[#4A4A49] text-lg md:text-xl font-black border-t border-[#d7def8] cursor-pointer hover:bg-[#fff3cf] transition-colors"
+                              className="whitespace-nowrap px-2 py-4 text-[#4A4A49] text-lg md:text-xl font-black border-t border-[#d7def8] cursor-pointer hover:bg-[#fff3cf] transition-colors"
                             >
                               {row.col2 || 0}
                             </td>
